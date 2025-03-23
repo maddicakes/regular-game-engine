@@ -1,6 +1,13 @@
 <?php session_start();
 
 /**
+*  regular game engine
+*  @version va2.1
+*  created & maintained by madelynne
+*   ~ https://github.com/maddicakes
+*   ~ https://bsky.app/profile/maddicakes.bsky.social
+*
+*  regular game engine unlicense ~~~~~~~~~~~~~
 *  This is free and unencumbered software released into the public domain.
 *
 *  Anyone is free to copy, modify, publish, use, compile, sell, or
@@ -27,19 +34,71 @@
 *  For more information, please refer to https://unlicense.org/
 */
 
-$coordarray = isset( $_SESSION['coords'] ) ? $_SESSION['coords'] : [];
-$_SESSION['temporary'] = [];
-$mapdisplay       = '+ map';
-$uidisplay        = '+ ui';
-$resourcesdisplay = '+ res';
-if( $_SESSION['map_display'] !== false )
-    $mapdisplay = '- map';
-if( $_SESSION['show_ui'] !== false )
-    $uidisplay = '- ui';
-if( $_SESSION['show_resources'] !== false )
-    $resourcesdisplay = '- res';
-if( file_exists( __DIR__  . '/data.php' ) )
-        include( __DIR__  . '/data.php');
+defaults:{
+    $_SESSION['temporary'] = [];
+    $coordarray            = [];
+    if( isset( $_SESSION['coords'] ) ){
+        $coordarray = $_SESSION['coords'];
+    }
+    $directions = [
+        'north',
+        'northeast',
+        'east',
+        'southeast',
+        'south',
+        'southwest',
+        'west',
+        'northwest'
+    ];
+    $mapdisplay = '+ map';
+    if( $_SESSION['map_display'] !== false ){ $mapdisplay = '- map'; }
+    $resourcesdisplay = '+ res';
+    if( $_SESSION['show_resources'] !== false ){ $resourcesdisplay = '- res'; }
+    $uidisplay = '+ ui';
+    if( $_SESSION['show_ui'] !== false ){ $uidisplay = '- ui'; }
+    /** an array of keys that we expect to be used (@since va2.1) ~~~~~~~~~~~~~ */
+    $trusted = [
+        'coord',
+        'cyclecode',
+        'destroy',
+        'examine',
+        'flee',
+        'jump',
+        'ladder',
+        'minicoord',
+        'playerdown',
+        'playerleft',
+        'playerright',
+        'playerup',
+        'plugin',
+        'r',
+        'resource',
+        'resources',
+        'rez',
+        'rr',
+        'swap',
+        'togglemap',
+        'tunnel',
+        'turnoff',
+        'turnon',
+        'ui',
+        'unhand',
+        'unplug',
+        'x'
+    ];
+    /** ~~~~~~~~~~~~~ */
+    /** the data file ~~~~~~~~~~~~~
+     *  regular game engine ships with it's own custom data (a 'base game')
+     *  creating a data file (data.php) and placing it within rge's directory
+     *  (and one which contains the appropriate arrays) will replace the
+     *  base data
+     *
+     *  for examples of how this data is structured and what it should contain,
+     *  see file structure field data:{}
+     */
+    if( file_exists( __DIR__ . '/data.php' ) ){ include( __DIR__  . '/data.php'); }
+    /** ~~~~~~~~~~~~~ */
+}
 
 data:{
     if( ! isset( $data ) ){
@@ -938,102 +997,33 @@ data:{
             'enrichedsoil',
         ];
     }
-    
     if( isset( $items ) ){
         
     }
 }
 
 functions:{
-    function _decay(){
-        $decay = rand( $_SESSION['area'] + 5, $_SESSION['area'] + 10 );
-        $decay = (int)"{$decay}0";
-        return $decay;
-    }
-    function _reload($parts){
-        $goto=NULL;
-        if( $parts != './' ){
-            foreach($parts as $p){
-                $goto.="{$p}/";
-            }
-            $goto=ltrim(rtrim($goto,'/'),'/');
-            if(!empty($goto))
-                $goto="?/{$goto}";
-        }
-        else{
-            $goto = NULL;
-        }
-        header("Location:./{$goto}");
-    }
 
-
-
-
-    function _player( $opts = [] ){
-        $phealth = $_SESSION['health'];
-        $paction = $_SESSION['action'];
-        $pcon    = $_SESSION['attributes']['constitution'];
-        $pstam   = $_SESSION['attributes']['stamina'];
-        $pstr    = $_SESSION['attributes']['strength'];
-        $pagi    = $_SESSION['attributes']['agility'];
-        $ppre    = $_SESSION['attributes']['precision'];
-        $pluck   = $_SESSION['attributes']['luck'];
-        return [
-            'health' => $phealth,
-            'action' => $paction,
-            'con'    => $pcon,
-            'stam'   => $pstam,
-            'str'    => $pstr,
-            'agi'    => $pagi,
-            'pre'    => $ppre,
-            'luck'   => $pluck
-        ];
-        
-    }
-
-    /**
-     *
-     *  
-
-    # Brad
-    # https://stackoverflow.com/users/362536/brad
-    # https://stackoverflow.com/a/11872928
-    # Aug 8, 2012 (re:"Generating random results in PHP?")
-    
-     *
-     *
-     **/
-
-    function _random( $weightedValues = [], $skip = NULL ){
-        /**
-        * getRandomWeightedElement()
-        * Utility function for getting random values with weighting.
-        * Pass in an associative array, such as array('A'=>5, 'B'=>45, 'C'=>50)
-        * An array like this means that "A" has a 5% chance of being selected, "B" 45%, and "C" 50%.
-        * The return value is the array key, A, B, or C in this case.  Note that the values assigned
-        * do not have to be percentages.  The values are simply relative to each other.  If one value
-        * weight was 2, and the other weight of 1, the value with the weight of 2 has about a 66%
-        * chance of being selected.  Also note that weights should be integers.
-        * 
-        * @param array $weightedValues
-        */
-        $rand = mt_rand( 0, (int)array_sum( $weightedValues ) );
-        foreach( $weightedValues as $key => $value ) {
-            $rand -= $value;
-            if( $rand <= 0 ){
-                if( ! is_NULL( $skip ) ){
-                    if( $key == $skip ){
-                        _random($weightedValues, $skip );
-                    }
-                    else{
-                        return $key;
-                    }
-                }
-                return $key;
+    /** Make a true/false comparison ~~~~~~~~~~~~~
+     *  @since version alpha
+     *  return bool
+     */
+    function _a2a( $apples = [] ){
+        $comparison = false;
+        if( isset( $apples[0] ) AND isset( $apples[1] ) ){
+            $comparison = $apples[0] == $apples[1] ? true : false;
+            if( str_starts_with( '!', $apples[1] ) ){
+                $apples[1] = ltrim( $apples[1], '!' );
+                $comparison = $apples[0] != $apples[1] ? true : false;
             }
         }
+        return $comparison;
     }
+    /** ~~~~~~~~~~~~~ */
 
+    /** Increase an attribute's leveling status/level ~~~~~~~~~~~~~
+     *  @since version alpha
+     */
     function _attrup( $opts = [] ){
         if( $_SESSION['acquire']['action'] !== false ){
             if( isset( $opts['attr'] ) ){
@@ -1064,7 +1054,28 @@ functions:{
             }
         }
     }
+    /** ~~~~~~~~~~~~~ */
 
+    /** Return an on-map mob HP value based on current area ~~~~~~~~~~~~~
+     *  @since va2
+     *      Take $_SESSION['area'], add 5-10
+     *      Get a random integer from that range
+     *      Add a 0
+     *      Return this value
+     *  @return int
+     */
+    function _decay(){
+        $decay = rand( $_SESSION['area'] + 5, $_SESSION['area'] + 10 );
+        $decay = (int)"{$decay}0";
+        return $decay;
+    }
+    /** ~~~~~~~~~~~~~ */
+
+    /** Return a display for unlocking a locked (thing) ~~~~~~~~~~~~~
+     *  @since version alpha
+     *  @since va2:
+     *      Needs to be reworked into the current system
+     */
     function _lockedroomcode( $opts = [] ){
         if( isset( $opts['code'] ) ){
             $out = '<span class="lockeddoorconsole">';
@@ -1124,7 +1135,78 @@ functions:{
         }
         return NULL;
     }
+    /** ~~~~~~~~~~~~~ */
 
+    /** Return an array of information for the player's current status ~~~~~~~~~~~~~
+     *  @since va2
+     */
+    function _player( $opts = [] ){
+        $phealth = $_SESSION['health'];
+        $paction = $_SESSION['action'];
+        $pcon    = $_SESSION['attributes']['constitution'];
+        $pstam   = $_SESSION['attributes']['stamina'];
+        $pstr    = $_SESSION['attributes']['strength'];
+        $pagi    = $_SESSION['attributes']['agility'];
+        $ppre    = $_SESSION['attributes']['precision'];
+        $pluck   = $_SESSION['attributes']['luck'];
+        return [
+            'health' => $phealth,
+            'action' => $paction,
+            'con'    => $pcon,
+            'stam'   => $pstam,
+            'str'    => $pstr,
+            'agi'    => $pagi,
+            'pre'    => $ppre,
+            'luck'   => $pluck
+        ];
+        
+    }
+    /** ~~~~~~~~~~~~~ */
+
+    /**
+     *
+     *  
+    # Brad
+    # https://stackoverflow.com/users/362536/brad
+    # https://stackoverflow.com/a/11872928
+    # Aug 8, 2012 (re:"Generating random results in PHP?")
+     *
+     *
+     **/
+    function _random( $weightedValues = [], $skip = NULL ){
+        /**
+        * getRandomWeightedElement()
+        * Utility function for getting random values with weighting.
+        * Pass in an associative array, such as array('A'=>5, 'B'=>45, 'C'=>50)
+        * An array like this means that "A" has a 5% chance of being selected, "B" 45%, and "C" 50%.
+        * The return value is the array key, A, B, or C in this case.  Note that the values assigned
+        * do not have to be percentages.  The values are simply relative to each other.  If one value
+        * weight was 2, and the other weight of 1, the value with the weight of 2 has about a 66%
+        * chance of being selected.  Also note that weights should be integers.
+        * 
+        * @param array $weightedValues
+        */
+        $rand = mt_rand( 0, (int)array_sum( $weightedValues ) );
+        foreach( $weightedValues as $key => $value ) {
+            $rand -= $value;
+            if( $rand <= 0 ){
+                if( ! is_NULL( $skip ) ){
+                    if( $key == $skip ){
+                        _random($weightedValues, $skip );
+                    }
+                    else{
+                        return $key;
+                    }
+                }
+                return $key;
+            }
+        }
+    }
+    /** ~~~~~~~~~~~~~ */
+
+    /** Return an array of spawn percentages (sp) for resources ~~~~~~~~~~~~~
+     *  @since version alpha
+     */
     function _resource( $opts = [] ){
         global $resourcetable;
         if( empty( $opts ) ){
@@ -1136,13 +1218,47 @@ functions:{
             }
             return _random( $types );
         }
+        return [];
     }
+    /** ~~~~~~~~~~~~~ */
+
+    /** Update a tile information ~~~~~~~~~~~~~
+     *  @since va2
+     */
+    function _tileupdate( $opts = [] ){
+        if( isset( $opts['coords'] ) ){
+            $coords = explode( '/', $opts['coords'] );
+            $opts['x'] = $coords[0];
+            $opts['y'] = $coords[1];
+        }
+        if( isset( $opts['x'] ) AND isset( $opts['y'] ) ){
+            $fishstock = mt_rand( 1, $_SESSION['area'] );
+            $_SESSION['coords']["{$opts['x']}/{$opts['y']}"] = [
+                'decay'   => _decay(),
+                'disp'    => $opts['type'],
+                'born'    => time(),
+                'offdisp' => 'powerless',
+                'powered' => true,
+                'fish'    => $fishstock
+            ];
+        }
+        return NULL;
+    }
+    /** ~~~~~~~~~~~~~ */
 
 }
 
 GET:{
 
-    $xmax = 64; $ymax = 64;
+    $c    = 0;
+    $grpA = [];
+    $grpB = [];
+    $grpC = [];
+    $grpD = [];
+    $posA = 'h';
+    $selA = 0;
+    $xmax = 64;
+    $ymax = 64;
 
     if( isset( $_SESSION['playerposition'] ) ){
 
@@ -1319,10 +1435,6 @@ GET:{
     }
 
     # $_GET k/v pairs
-    $grpA = 
-    $grpB = 
-    $grpC = 
-    $grpD = [];
     $grps = [
         [ 'grpA', 1 ], # ?/1/2
         [ 'grpB', 3 ], # ?/*/*/3/4
@@ -1330,13 +1442,10 @@ GET:{
         [ 'grpD', 7 ]  # ?/*/*/*/*/*/*/7/8
     ];
 
-    $c = 0;
     foreach( $_GET as $k => $v ){
 
         # Truncate group
-        if( $c != 0 ){
-            continue;
-        }
+        if( $c != 0 ){ continue; }
 
         $length = ( sizeOf( $grps ) * 7 ) + sizeOf( $grps );
 
@@ -1366,6 +1475,9 @@ GET:{
                 $v
              );
 
+        /** If we encounter a key that we don't expect, boot to home (@since va2.1) ~~~~~~~~~~~~~ */
+        if( ! in_array( $k, $trusted ) ){ header( 'Location: ./' ); }
+
         # Check the current top/left positioning on map (corresponds to x/y)
         $checkdown  = $_SESSION['top'];  $checkleft  = $_SESSION['left'];
         $checkright = $_SESSION['left']; $checkup    = $_SESSION['top'];
@@ -1382,7 +1494,7 @@ GET:{
         if( ! empty( $_GET ) ){
             if( $k[0] == 'togglemap' ){
                 $_SESSION['map_display'] = $_SESSION['map_display'] !== false ? (bool)false : (bool)true;
-                _reload('./');
+                header( 'Location: ./' );
             }
             elseif( $k[0] == 'ui' ){
                 $_SESSION['show_ui'] = $_SESSION['show_ui'] !== false ? (bool)false : (bool)true;
@@ -1934,12 +2046,15 @@ GET:{
 
     }
 
-    $posA = 'h'; 
-    $selA = 0;
+    /** What is the player currently standing on ~~~~~~~~~~~~~ */
     if( isset( $_SESSION['playerposition'] ) ){
-        $standingon = $_SESSION['coords']["{$_SESSION['playerposition']}"]["{$disp}"];
-        $_SESSION['standingon'] = $standingon;
+        if( isset( $_SESSION['coords']["{$_SESSION['playerposition']}"]["{$disp}"] ) ){
+            $standingon = $_SESSION['coords']["{$_SESSION['playerposition']}"]["{$disp}"];
+            $_SESSION['standingon'] = $standingon;
+        }
     }
+
+    /** Swaps for resource data vs textual data ~~~~~~~~~~~~~ */
     if( isset( $_SESSION['map_display'] ) ){
         if( $_SESSION['map_display'] !== false ){
             if( isset( $_SESSION['standingon'] ) ){
@@ -1954,22 +2069,22 @@ GET:{
         }
     }
 
-    if( ! isset( $data ) ) $data = [];
-    $dat = isset( $data[0] ) ? $data[0] : $data;
-    $dat = isset( $data[$posA] ) ? $data[$posA] : $dat;
-    if( !isset( $dat[$posA] ) ){ $grpA = []; }
-    $posB  = isset( $grpB[0] )     ? $grpB[0] : NULL;
-    $title = isset( $dat['t'][0] ) ? htmlentities( $dat['t'][0], ENT_QUOTES|ENT_IGNORE, 'utf-8') : 'o u o';
+    if( ! isset( $data ) ){ $data = []; }
+       $dat = isset( $data[0] )     ? $data[0]         : $data;
+       $dat = isset( $data[$posA] ) ? $data["{$posA}"] : $dat;
+    if( ! isset( $dat["{$posA}"] ) ){ $grpA = []; }
+
+    $posB  = isset( $grpB[0] ) ? $grpB[0] : NULL;
+
+    /** <title></title> */
+    $title = isset( $dat['t'][0] ) ? htmlentities( $dat['t'][0], ENT_QUOTES|ENT_IGNORE, 'utf-8' ) : 'o u o';
+
 }
 
 session:{
-    $disp = $_SESSION['worldpower'] !== false ? 'disp' : 'offdisp';
-    $directions = ['northeast','northwest','southeast','southwest','north','south','east','west'];
 
+    $disp       = $_SESSION['worldpower'] !== false ? 'disp' : 'offdisp';
 
-
-
-    
     if( ! isset( $_SESSION['started'] ) ){
         $_SESSION = [
             'acquire' => [
@@ -2073,10 +2188,6 @@ session:{
         }
     }
 
-
-
-
-
     $currentcoord = NULL;
     if( isset( $_SESSION['currentcoord'] ) ){
         $currentcoord = $_SESSION['currentcoord'];
@@ -2099,10 +2210,6 @@ session:{
             header( 'Location: ./' );
         }
     }
-
-
-
-
 
     if( ! isset( $_SESSION['currentresource'] ) ){
         if( isset( $_SESSION['currentcoordb'] ) ){
@@ -2171,10 +2278,6 @@ session:{
         }
     }
 
-
-
-
-
     if( ! is_NULL( $currentresource ) ){
         if( isset( $_SESSION['currentcoord'] ) ){
             if( isset( $_SESSION['coords']["{$_SESSION['currentcoord']}"]["{$disp}"] ) ){
@@ -2193,7 +2296,7 @@ session:{
                                     $_SESSION['resources']["{$currentresource}"] = $_SESSION['resources']["{$currentresource}"] - 1;
                                     _tileupdate( [ 'coords' => $_SESSION['currentcoord'], 'type' => $then ] );
                                     unset( $_SESSION['currentcoord'] );
-                                    _reload('./');
+                                    header( 'Location: ./' );
                                 }
                                 else{
                                     unset( $_SESSION['currentresource'] );
@@ -2206,13 +2309,9 @@ session:{
                     }
                 }
             }
-            _reload('./');
+            header( 'Location: ./' );
         }
     }
-
-
-
-
 
     /** fishing, harvesting, & scavenging
      *  @since v-alpha ~~~~~~~~~~~~~~~~~~
@@ -2294,7 +2393,7 @@ session:{
                             }
                         }
                         unset( $_SESSION['currentcoord'] );
-                        _reload('./');
+                        header( 'Location: ./' );
                     }
                     else{
                         $break   = 1;
@@ -2454,7 +2553,7 @@ session:{
                 }
             }
             unset( $_SESSION['currentcoord'] );
-            _reload('./');
+            header( 'Location: ./' );
         }
     }
     fhsunsets:{
@@ -2735,36 +2834,7 @@ session:{
             }
         }
     }
-    function _a2a( $apples = [] ){
-        $comparison = false;
-        if( isset( $apples[0] ) AND isset( $apples[1] ) ){
-            $comparison = $apples[0] == $apples[1] ? true : false;
-            if( str_starts_with( '!', $apples[1] ) ){
-                $apples[1] = ltrim( $apples[1], '!' );
-                $comparison = $apples[0] != $apples[1] ? true : false;
-            }
-        }
-        return $comparison;
-    }
-    function _tileupdate( $opts = [] ){
-        if( isset( $opts['coords'] ) ){
-            $coords = explode( '/', $opts['coords'] );
-            $opts['x'] = $coords[0];
-            $opts['y'] = $coords[1];
-        }
-        if( isset( $opts['x'] ) AND isset( $opts['y'] ) ){
-            $fishstock = mt_rand( 1, $_SESSION['area'] );
-            $_SESSION['coords']["{$opts['x']}/{$opts['y']}"] = [
-                'decay'   => _decay(),
-                'disp'    => $opts['type'],
-                'born'    => time(),
-                'offdisp' => 'powerless',
-                'powered' => true,
-                'fish'    => $fishstock
-            ];
-        }
-        return NULL;
-    }
+
     if( isset( $_GET['flee'] ) ){
         if( mt_rand( 0, 1 ) == 1 ){
             $_SESSION['combat']['currently'] = false;
@@ -2831,7 +2901,7 @@ session:{
                 
                 if( ! isset( $_SESSION['start'] ) ){
                     $_SESSION['start'] = true;
-                    _reload('./');
+                    header( 'Location: ./' );
                 }
             }
         }
@@ -2840,6 +2910,11 @@ session:{
 }
 
 formatting:{
+
+    /** markdown formatting for strings ~~~~~~~~~~~~~
+     *  @since version alpha
+     *  @return string
+     */
     function _format( $str ){
         $str = htmlentities( $str, ENT_QUOTES | ENT_IGNORE, 'utf-8' );
         $str = str_replace(
@@ -2861,8 +2936,10 @@ formatting:{
                 $str
             );
         }
-        return$str;
+        return $str;
     }
+    /** ~~~~~~~~~~~~~ */
+
 }
 
 language:{
@@ -4216,7 +4293,8 @@ language:{
 }
 
 weather:{
-    /**
+
+    /** A stupidly overcomplicated barely functional weather system ~~~~~~~~~~~~~
      *  Use a given season to produce a range of temperatures to fluctuate over
      *  a period of time to produce numbers that act as rain/snowfall simulation
      * 
@@ -4251,7 +4329,6 @@ weather:{
      *    'Converting Specific Humidity to Relative Humidity'
      *    - https://www.mathscinotes.com/2016/03/converting-specific-humidity-to-relative-humidity/
      */
-
     function _hygrometer( $values = [] ){
         $playertime = isset( $_SESSION['started'] ) ? $_SESSION['started'] : time();
         $season                    = $_SESSION['current_season'];
@@ -4370,8 +4447,9 @@ weather:{
             $rainchance = ( $saturationpercent * 50 ) / 50;
         // multipliers -----------------------------------------------
             // rainchance increases by a multiplier as time progresses
-            if( $m > 0 )
+            if( $m > 0 ){
                 $rainchance = $rainchance + ( $rainchance / 25 ) * $m;
+            }
             if( intval($rainchance) >= 40 ){
                 if( _random(['1' => $rainchance, '0' => 100-$rainchance]) == 1 ){
                     if( ! isset( $_SESSION['rain_began'] ) ){
@@ -4393,7 +4471,7 @@ weather:{
             if( isset( $_SESSION['rain_began'] ) ){
                 $rainbegan = $_SESSION['rain_began'];
                 if($rainbegan > 0){
-                    $relativehumidity = intval($relativehumidity) + (time() - $rainbegan) / 50;
+                    $relativehumidity = intval( $relativehumidity ) + (time() - $rainbegan ) / 50;
                     $rainbegan        = gmdate( 'z H:i:s', time() - $rainbegan );
                     $rainchance       = 100;
                     if( $relativehumidity > 100 ){
@@ -4416,14 +4494,17 @@ weather:{
             return [
                 'precipitation_report' => [
                     'temp'     => $t,
-                    'season'    => [ 'name' => $season, 'info' => $sinfo ],
+                    'season'   => [
+                        'name' => $season, 
+                        'info' => $sinfo 
+                    ],
                     'freezing' => $f,
                     'precipitation' => [
                         'icon'       => $icon,
                         'currently'  => $raining > 0 ? 'yes' : 'no',
                         'for'        => $rainbegan,
                         'last'       => $rainended,
-                        'chance'     => intval($rainchance),
+                        'chance'     => intval( $rainchance ),
                         'saturation' => [
                             'air_saturation'            => $airsaturation,
                             'saturation_percent'        => $saturationpercent,
@@ -4447,6 +4528,8 @@ weather:{
                 ]
             ];
     }
+    /** ~~~~~~~~~~~~~ */
+
 }
 
 scene:{
@@ -5008,7 +5091,7 @@ templating:{
                                                         $_SESSION['temp'] = true;                                                
                                                     }
                                                 }
-                                                _reload('./?x');
+                                                header( 'Location: ./?x' );
                                             }
                                             $powering = $thisfurnituredetails['powering'];
                                             if( isset( $furniture["{$powering[0]}"]["{$_SESSION['area']}"]["{$powering[1]}"] ) ){
@@ -5052,7 +5135,7 @@ templating:{
                                             if( isset( $_SESSION['turnbackon'] ) ){
                                                 $_SESSION['worldpower'] = true;
                                                 unset( $_SESSION['turnbackon'] );
-                                                _reload('./?x');
+                                                header( 'Location: ./?x' );
                                             }
                                             else{
                                                     $_SESSION['worldpower'] = isset( $_SESSION['coords']["{$x}/{$y}"]['powered'] ) ? $_SESSION['coords']["{$x}/{$y}"]['powered'] : false;
@@ -5061,7 +5144,7 @@ templating:{
                                                     unset( $_SESSION['start']);
                                                     unset( $_SESSION['examining'] );
                                                     unset( $_SESSION['temp'] );
-                                                    _reload('./');
+                                                    header( 'Location: ./' );
                                                 }
                                             }
                                             $xx = $x+1;
@@ -5573,7 +5656,7 @@ templating:{
                                                             if(!isset($_SESSION['opt']["{$posA}"]["{$d}"])){
                                                                 if($v[1]==$posB){
                                                                     $_SESSION['opt']["{$posA}"]["{$d}"] = $posB;
-                                                                    _reload([$posA]);
+                                                                    header( "Location: ./?/{$posA}" );
                                                                 }
                                                             }
                                                         }
