@@ -35,6 +35,7 @@
 */
 
 defaults:{
+
     $_SESSION['temporary'] = [];
     $coordarray            = [];
     if( isset( $_SESSION['coords'] ) ){
@@ -98,9 +99,11 @@ defaults:{
      */
     if( file_exists( __DIR__ . '/data.php' ) ){ include( __DIR__  . '/data.php'); }
     /** ~~~~~~~~~~~~~ */
+
 }
 
 data:{
+
     if( ! isset( $data ) ){
         $data=[
             'opt'=>[
@@ -1000,6 +1003,7 @@ data:{
     if( isset( $items ) ){
         
     }
+
 }
 
 functions:{
@@ -1163,7 +1167,7 @@ functions:{
     }
     /** ~~~~~~~~~~~~~ */
 
-    /**
+    /** Return an item based on chance % ~~~~~~~~~~~~~ 
      *
      *  
     # Brad
@@ -1222,7 +1226,7 @@ functions:{
     }
     /** ~~~~~~~~~~~~~ */
 
-    /** Update a tile information ~~~~~~~~~~~~~
+    /** Update a tile's information ~~~~~~~~~~~~~
      *  @since va2
      */
     function _tileupdate( $opts = [] ){
@@ -1476,11 +1480,7 @@ GET:{
              );
 
         /** If we encounter a key that we don't expect, boot to home (@since va2.1) ~~~~~~~~~~~~~ */
-        if( ! in_array( $k, $trusted ) ){ header( 'Location: ./' ); }
-
-        # Check the current top/left positioning on map (corresponds to x/y)
-        $checkdown  = $_SESSION['top'];  $checkleft  = $_SESSION['left'];
-        $checkright = $_SESSION['left']; $checkup    = $_SESSION['top'];
+        if( ! in_array( $k[0], $trusted ) ){ header( 'Location: ./' ); }
 
         # Unset swap tiles when not actively in swap mode
         if( isset( $_SESSION['swap'] ) AND $k[0] != 'swap' )
@@ -2083,20 +2083,21 @@ GET:{
 
 session:{
 
-    $disp       = $_SESSION['worldpower'] !== false ? 'disp' : 'offdisp';
+    $disp = $_SESSION['worldpower'] !== false ? 'disp' : 'offdisp';
 
+    /** Setup the initial $_SESSION array ~~~~~~~~~~~~~ */
     if( ! isset( $_SESSION['started'] ) ){
         $_SESSION = [
             'acquire' => [
-                'action'     => true,
-                'encounters' => true,
-                'falldamage' => true,
-                'gravity'    => false,
-                'resources'  => true,
-                'score'      => true
+                'action'     => true,  # enable/disable action useage
+                'encounters' => true,  # enable/disable random battle encounters
+                'falldamage' => true,  # enable/disable fall damage
+                'gravity'    => false, # enable/disable gravity for all
+                'resources'  => true,  # enable/disable resource gathering
+                'score'      => true   # enable/disable score
             ],
-            'exp' => 0,
-            'lvl' => 1,
+            'area'    => 1,
+            'arrived' => time(),
             'attributes' => [
                 'constitution' => 7,
                 'stamina'      => 7,
@@ -2105,38 +2106,6 @@ session:{
                 'precision'    => 7,
                 'luck'         => 1
             ],
-            'area'           => 1,
-            'arrived'        => time(),
-            'coords'         => [],
-            'dead'           => false,
-            'died'           => 0,
-            'id'             => time() . mt_rand( 0, 1024 ),
-            'left'           => 0,
-            'map_display'    => true,
-            'playerposition' => '1/4',
-            'rain_ended'     => time(),
-            'resources'      => [],
-            'current_season' => 'autumn',
-            'show_resources' => isset( $_SESSION['show_resources'] ) ? $_SESSION['show_resources'] : true,
-            'skills' => [
-                'fishing'    => 1,
-                'mining'     => 1,
-                'scavenging' => 1,
-                'swimming'   => 1
-            ],
-            'score_area'        => 0,
-            'score_avail'       => 0,
-            'score_total'       => 0,
-            'show_ui'           => true,
-            'started'           => time(),
-            'temp'              => 1,
-            'top'               => 0,
-            'totalfish'         => 0,
-            'totalharvest'      => 0,
-            'totalscavenge'     => 0,
-            'totalwatersources' => 0,
-            'worldpower'        => true,
-            'steps'             => 0,
             'combat' => [
                 'currently'        => false,
                 'last'             => time(),
@@ -2145,7 +2114,38 @@ session:{
                 'steps_since_last' => 0,
                 'times'            => 0,
                 'won'              => 0,
-            ]
+            ],
+            'coords'         => [],
+            'current_season' => 'autumn',
+            'dead'           => false,
+            'died'           => 0,
+            'exp'            => 0,
+            'id'             => (int)time() . mt_rand( 0, 1024 ),
+            'lvl'            => 1,
+            'map_display' => true,
+            'playerposition' => '1/4',
+            'rain_ended'     => time(),
+            'resources'      => [],
+            'score_area'     => 0,
+            'score_avail'    => 0,
+            'score_total'    => 0,
+            'season'         => [],
+            'show_resources' => true,
+            'show_ui'        => true,
+            'skills' => [
+                'fishing'    => 1,
+                'mining'     => 1,
+                'scavenging' => 1,
+                'swimming'   => 1
+            ],
+            'started'           => time(),
+            'steps'             => 0,
+            'temp'              => 1,
+            'totalfish'         => 0,
+            'totalharvest'      => 0,
+            'totalscavenge'     => 0,
+            'totalwatersources' => 0,
+            'worldpower'        => true
         ];
         if( isset( $resourcctable ) ){
             foreach( $resourcctable as $k => $v ){
