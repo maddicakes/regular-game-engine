@@ -1167,6 +1167,72 @@ functions:{
     }
     /** ~~~~~~~~~~~~~ */
 
+    function _quantatt( $opts = [] ){
+        $arr = [
+            'action'               => 0,
+            'block_chance'         => 0,
+            'block_value'          => 0,
+            'critical_hit_chance'  => 0,
+            'dodge'                => 0,
+            'evasion_chance'       => 0,
+            'evasion_value'        => 0,
+            'health'               => 0,
+            'hit_chance'           => 0,
+            'melee_damage'         => 0,
+            'parry'                => 0,
+            'strikethrough_chance' => 0,
+            'strikethrough_value'  => 0,
+            'exp'                  => 0,
+        ];
+        if( is_array ( $opts ) ){
+            foreach( $opts as $k => $v ){
+                if( $k == 'agility' ){
+                    $arr['agility']        = $v;
+                    $arr['dodge']          = $arr['dodge']          + (float)$v * .01;
+                    $arr['evasion_chance'] = $arr['evasion_chance'] + (float)$v * .01;
+                    $arr['parry']          = $arr['parry']          + (float)$v * .005;
+                }
+                if( $k == 'constitution' ){
+                    $arr['action']       = $arr['action'] + (float)$v * 2;
+                    $arr['constitution'] = $v;
+                    $arr['health']       = $arr['health'] + (float)$v * 8;
+                }
+                if( $k == 'luck' ){
+                    $arr['critical_hit_chance']  = $arr['critical_hit_chance']  + (float)$v * .0033;
+                    $arr['dodge']                = $arr['dodge']                + (float)$v * .0033;
+                    $arr['evasion_chance']       = $arr['evasion_chance']       + (float)$v * .0033;
+                    $arr['evasion_value']        = $arr['evasion_value']        + (float)$v * .1;
+                    $arr['luck']                 = $v;
+                    $arr['strikethrough_chance'] = $arr['strikethrough_chance'] + (float)$v * .005;
+                    $arr['strikethrough_value']  = $arr['strikethrough_value']  + (float)$v * .1;
+                }
+                if( $k == 'precision' ){
+                    $arr['block_chance']         = $arr['block_chance']         + (float)$v * .005;
+                    $arr['critical_hit_chance']  = $arr['critical_hit_chance']  + (float)$v * .01;
+                    $arr['parry']                = $arr['parry']                + (float)$v * .005;
+                    $arr['precision']            = $v;
+                    $arr['strikethrough_chance'] = $arr['strikethrough_chance'] + (float)$v * .005;
+                }
+                if( $k == 'stamina' ){
+                    $arr['action']  = $arr['action'] + (float)$v * 8;
+                    $arr['health']  = $arr['health'] + (float)$v * 2;
+                    $arr['stamina'] = $v;
+                }
+                if( $k == 'strength' ){
+                    $arr['block_chance'] = $arr['block_chance'] + (float)$v * .005;
+                    $arr['block_value']  = $arr['block_value']  + (float)$v * .5;
+                    $arr['hit_chance']   = $arr['hit_chance']   + (float)$v * .01;
+                    $arr['melee_damage'] = $arr['melee_damage'] + (float)$v * .33;
+                    $arr['strength']     = $v;
+                }
+                if( $k == 'exp' ){
+                    $arr['exp'] = $v;
+                }
+            }
+        }
+        return $arr;
+    }
+
     /** Return an item based on chance % ~~~~~~~~~~~~~ 
      *
      *  
@@ -1909,113 +1975,126 @@ GET:{
                                     }
                                 }
 
-
-
-
-
-                                /** combat
+                                /** combat (on map)
                                  *  @since va2
                                  */
-                                if( isset( $_SESSION['coords']["{$_SESSION['currentcoord']}"]['decay'] ) ){
-                                    if( $_SESSION['coords']["{$_SESSION['currentcoord']}"]['decay'] > 0 ){ 
-                                        $_SESSION['combat']['last'] = time();
-                                        $to = $_SESSION['currentcoord'];
-                                        $mobcoords = explode( '/', $to );
-                                        $mobx      = $mobcoords[0];
-                                        $moby      = $mobcoords[1];
-                                        $extradecay = 0;
-                                        if( _random( [ 'lucky' => $_SESSION['attributes']['luck'], 'nothing' => 100 ] ) == 'lucky' ){
-                                            _attrup( [ 'attr' => 'luck' ] );
-                                            $_SESSION['action'] = $_SESSION['action'] + 15;
-                                            $extradecay = 2;
-                                        }
-                                        $hit = true;
-                                        if( $moby > $ppcy ){
-                                            if( $mobx == $ppcx ){
-                                                $ny  = $ppcy + 2;
-                                                $nny = $ppcy + 3;
-                                                if( isset( $_SESSION['coords']["{$ppcx}/{$ny}"]['decay'] ) ){ 
-                                                    $_SESSION['coords']["{$ppcx}/{$ny}"]['decay'] = $_SESSION['coords']["{$ppcx}/{$ny}"]['decay'] + 2 + $extradecay;
-                                                }
-                                                if( isset( $_SESSION['coords']["{$ppcx}/{$nny}"]['decay'] ) ){ 
-                                                    $_SESSION['coords']["{$ppcx}/{$nny}"]['decay'] = $_SESSION['coords']["{$ppcx}/{$nny}"]['decay'] + 1 + $extradecay;
-                                                }
+                                if( isset( $_SESSION['coords']["{$_SESSION['currentcoord']}"]['mob'] ) ){
+                                    if( is_array( $_SESSION['coords']["{$_SESSION['currentcoord']}"]['mob'] ) ){
+                                        $mob = $_SESSION['coords']["{$_SESSION['currentcoord']}"]['mob'];
+                                        $m_action               = $mob['action'];
+                                        $m_block_chance         = $mob['block_chance'];
+                                        $m_block_value          = $mob['block_value'];
+                                        $m_critical_hit_chance  = $mob['critical_hit_chance'];
+                                        $m_dodge                = $mob['dodge'];
+                                        $m_evasion_chance       = $mob['evasion_chance'];
+                                        $m_evasion_value        = $mob['evasion_value'];
+                                        $m_health               = $mob['health'];
+                                        $m_hit_chance           = $mob['hit_chance'];
+                                        $m_melee_damage         = $mob['melee_damage'];
+                                        $m_parry                = $mob['parry'];
+                                        $m_strikethrough_chance = $mob['strikethrough_chance'];
+                                        $m_strikethrough_value  = $mob['strikethrough_value'];
+                                        $p_current_battle = _quantatt(
+                                            [
+                                                'constitution' => $_SESSION['attributes']['constitution'],
+                                                'stamina'      => $_SESSION['attributes']['stamina'],
+                                                'strength'     => $_SESSION['attributes']['strength'],
+                                                'agility'      => $_SESSION['attributes']['agility'],
+                                                'precision'    => $_SESSION['attributes']['precision'],
+                                                'luck'         => $_SESSION['attributes']['luck']
+                                            ]
+                                        );
+                                        $p_action               = $p_current_battle['action'];
+                                        $p_block_chance         = $p_current_battle['block_chance'];
+                                        $p_block_value          = $p_current_battle['block_value'];
+                                        $p_critical_hit_chance  = $p_current_battle['critical_hit_chance'];
+                                        $p_dodge                = $p_current_battle['dodge'];
+                                        $p_evasion_chance       = $p_current_battle['evasion_chance'];
+                                        $p_evasion_value        = $p_current_battle['evasion_value'];
+                                        $p_health               = $p_current_battle['health'];
+                                        $p_hit_chance           = $p_current_battle['hit_chance'];
+                                        if( ! isset( $_SESSION['equipped']['left_hand'] ) ){
+                                            if( ! isset( $_SESSION['equipped']['right_hand'] ) ){
+                                                $p_hit_chance = 100;                                            
                                             }
                                         }
-                                        if( $moby == $ppcy ){
-                                            if( $mobx > $ppcx ){
-                                                $nx  = $ppcx + 2;
-                                                $nnx = $ppcx + 3;
-                                                if( isset( $_SESSION['coords']["{$nx}/{$ppcy}"]['decay'] ) ){ 
-                                                    $_SESSION['coords']["{$nx}/{$ppcy}"]['decay'] = $_SESSION['coords']["{$nx}/{$ppcy}"]['decay'] + 2 + $extradecay;
+                                        $p_melee_damage         = $p_current_battle['melee_damage'];
+                                            
+                                        $p_parry                = $p_current_battle['parry'];
+                                        $p_strikethrough_chance = $p_current_battle['strikethrough_chance'];
+                                        $p_strikethrough_value  = $p_current_battle['strikethrough_value'];
+                                        if( $m_health > 0 ){
+                                            if( $p_hit_chance  > $m_dodge ){             $m_dodge          = $p_hit_chance - $m_dodge; }
+                                            if( $p_hit_chance  > $m_evasion_chance ){    $m_evasion_chance = $p_hit_chance - $m_evasion_chance; }
+                                            if( $p_parry      >= $m_parry ){             $m_hit_chance     = $m_hit_chance - ( $m_hit_chance / 4 ); }
+                                            if( $p_hit_chance <= $m_evasion_chance ){    $p_hit_chance     = $m_evasion_chance - $p_hit_chance; }
+                                            if( $p_hit_chance <= $m_dodge ){             $p_hit_chance     = $m_dodge - $p_hit_chance; }
+                                            $nothing  = 300 - $m_dodge - $m_evasion_chance - $m_hit_chance - $m_parry;
+                                            $tactic_a = _random( [ 'nothing' => $nothing, 'dodge' => $m_dodge,      'evade' => $m_evasion_chance, 'parry' => $m_parry ] );
+                                            $player_a = _random( [ 'hit'   => $p_hit_chance, 'miss'  => ( 100 - $p_hit_chance ) ] );
+                                            if( $player_a == 'hit' ){
+                                                if( $tactic_a == 'evade' ){
+                                                    $_SESSION['combat']['log']['mob'][] = "::Evaded for {$m_evasion_value}";
+                                                    $p_melee_damage = $p_melee_damage - $m_evasion_value;
                                                 }
-                                                $secondarychance = ( $_SESSION['attributes']['luck'] + $_SESSION['attributes']['precision'] );
-                                                
-                                                    $secondarychance = $secondarychance / $_SESSION['attributes']['strength'];
-                                                
-                                                $secondarynothing = 100 - $secondarychance;
-                                                if( _random( [ 'secondary' => $secondarychance, 'nothing' => $secondarynothing ] ) == 'secondary' ){
-                                                    if( isset( $_SESSION['coords']["{$nnx}/{$ppcy}"]['decay'] ) ){ 
-                                                        $_SESSION['coords']["{$nnx}/{$ppcy}"]['decay'] = $_SESSION['coords']["{$nnx}/{$ppcy}"]['decay'] + 1 + $extradecay;
+                                                elseif( $tactic_a == 'parry' ){
+                                                    $parry_dmg = $p_melee_damage / 4;
+                                                    $_SESSION['health'] = $_SESSION['health'] - $parry_dmg;
+                                                    $_SESSION['combat']['log']['mob'][] = "::Parried for for {$parry_dmg}";
+                                                    $p_melee_damage = 0;
+                                                }
+                                                elseif( $tactic_a == 'dodge' ){
+                                                    $_SESSION['combat']['log']['mob'][] = '::Dodged';
+                                                    $p_melee_damage = 0;
+                                                }
+                                                else{
+                                                    
+                                                        $mob_b = _random( [ 'crit' => $m_critical_hit_chance, 'strikethrough' => $m_strikethrough_chance ] );
+                                                        if( $mob_b == 'crit' ){
+                                                            $m_melee_damage = $m_melee_damage + $m_melee_damage * ( mt_rand( 1, 2 ) );
+                                                            if( _random( [ 'block' => $p_block_chance, 'nothing' => ( 100 - $p_block_chance ) ] ) == 'block' ){
+                                                                $m_melee_damage = $m_melee_damage - $p_block_value;
+                                                            }
+                                                        }
+                                                        elseif( $mob_b == 'strikethrough' ){
+                                                            $m_melee_damage = $m_melee_damage + ( $m_melee_damage / $m_strikethrough_value ) * 100;
+                                                        }
+                                                        $_SESSION['health'] = $_SESSION['health'] - $m_melee_damage;
+                                                    
+                                                    $player_b = _random( [ 'crit' => $p_critical_hit_chance, 'strikethrough' => $p_strikethrough_chance ] );
+                                                    if( $player_b == 'crit' ){
+                                                        $p_melee_damage = $p_melee_damage + $p_melee_damage * ( mt_rand( 1, 2 ) );
+                                                        if( _random( [ 'block' => $m_block_chance, 'nothing' => ( 100 - $m_block_chance ) ] ) == 'block' ){
+                                                            $p_melee_damage = $p_melee_damage - $m_block_value;
+                                                        }
+                                                    }
+                                                    elseif( $player_b == 'strikethrough' ){
+                                                        $p_melee_damage = $p_melee_damage + ( $p_melee_damage / $p_strikethrough_value ) * 100;
                                                     }
                                                 }
-                                            }
-                                        }
-                                        if( $mob > $ppcy ){
-                                            
-                                        }
-                                        if( $hit !== false ){
-                                            $mobtype = $_SESSION['coords']["{$to}"]['disp'];
-                                            
-                                                $toplayerhit     = isset( $resourcetable["{$mobtype}"]['mob']['dealing']['hit']     ) ? $resourcetable["{$mobtype}"]['mob']['dealing']['hit']     : 1;
-                                                $toplayerstr     = isset( $resourcetable["{$mobtype}"]['mob']['dealing']['str']     ) ? $resourcetable["{$mobtype}"]['mob']['dealing']['str']     : 1;
-                                                $toplayercrit    = isset( $resourcetable["{$mobtype}"]['mob']['dealing']['crit']    ) ? $resourcetable["{$mobtype}"]['mob']['dealing']['crit']    : 1;
-                                                $fromplayerblock = isset( $resourcetable["{$mobtype}"]['mob']['receiving']['block'] ) ? $resourcetable["{$mobtype}"]['mob']['receiving']['block'] : 1;
-                                                $fromplayerdodge = isset( $resourcetable["{$mobtype}"]['mob']['receiving']['dodge'] ) ? $resourcetable["{$mobtype}"]['mob']['receiving']['dodge'] : 1;
-                                                $hitplayerfor    = isset( $resourcetable["{$mobtype}"]['mob']['reverb']             ) ? $resourcetable["{$mobtype}"]['mob']['reverb']             : 1;
-                                                
-                                                $mobdodgechance  = $fromplayerdodge + (int)".0{$_SESSION['area']}";
-                                                $mobblockvalue   = 0;
-                                                $reverb          = 0;
-                                                if( $toplayerstr > 0 ){
-                                                    $mobblockchance  = $fromplayerblock + ( $toplayerstr );
-                                                    $mobblockvalue   = $toplayerstr * mt_rand( 1, 3 );
+                                                if( $m_health - $p_melee_damage <= 0 ){
+                                                    unset( $_SESSION['combat']['log'] );
+                                                    $_SESSION['coords']["{$_SESSION['currentcoord']}"]['mob'] = 'RIP';
+                                                    $_SESSION['exp'] = $_SESSION['exp'] + $m_exp;
                                                 }
-                                                if( _random( [ 'block' => $mobblockchance, 'dodge' => $dodgechance, 'hit' => 100 ] ) == 'hit' ){
-                                                    $mobhitfor = $_SESSION['attributes']['strength'] * 3 - $mobblockvalue;
-                                                    if( $hitplayerfor > 0 ){
-                                                        $reverb = ( $mobhitfor * $hitplayerfor ) / 100;
-                                                    }
-                                                }
-                                                $_SESSION['coords']["{$to}"]['decay'] = $_SESSION['coords']["{$to}"]['decay'] - $mobhitfor - $extradecay;
-                                                $_SESSION['health'] = $_SESSION['health'] - $reverb;
-                                            
-                                            
-                                            
-                                            
-                                            _attrup( [ 'attr' => 'strength' ] );
-                                            _attrup( [ 'attr' => 'stamina'  ] );
-                                            if( $_SESSION['coords']["{$to}"]['decay'] <= 0 ){
-                                                $_SESSION['coords']["{$_SESSION['currentcoord']}"]['decay'] = 0;
-                                                $_SESSION['exp'] = $_SESSION['exp'] + (int)"{$_SESSION['area']}0";
-                                                if( _random( [ 'lucky' => $_SESSION['attributes']['luck'], 'nothing' => 1000 ] ) == 'lucky' ){
-                                                    $_SESSION['exp'] = $_SESSION['exp'] + ( (int)"{$_SESSION['area']}0" * 2 );
+                                                else{
+                                                    $_SESSION['coords']["{$_SESSION['currentcoord']}"]['mob']['health'] = $m_health - $p_melee_damage;
                                                 }
                                             }
+                                            else {
+                                                $_SESSION['combat']['log']['player'][] = "::Missed (Hit chance: {$p_hit_chance}";
+                                            }
+                                            $_SESSION['combat']['last'] = time();
+                                            
                                         }
                                     }
-                                        #$player = _player();
                                 }
-
-
-
-
 
                             }
                         }
                     }
-                    header( 'Location: ./' );
-                }            
+                    
+                }
             }
             elseif( $k[0] == 'minicoord' ){
                 if( isset( $k[1] ) AND isset( $k[2] ) ){
@@ -2087,6 +2166,16 @@ session:{
 
     /** Setup the initial $_SESSION array ~~~~~~~~~~~~~ */
     if( ! isset( $_SESSION['started'] ) ){
+
+        # Random Build 0   1   2   3   4   5   6   7   8   9
+        $base_str     = [ 0,  50, 60, 0,  0,  40, 50, 0,  85, 50 ];
+        $base_con     = [ 25, 0,  0,  40, 0,  60, 65, 0,  85, 50 ];
+        $base_stam    = [ 0,  50, 70, 60, 20, 0,  65, 60, 40, 0  ];
+        $base_pre     = [ 65, 50, 40, 60, 80, 0,  0,  40, 10, 50 ];
+        $base_agi     = [ 50, 50, 0,  0,  80, 60, 20, 60, 0,  50 ];
+        $base_luck    = [ 60, 0,  30, 40, 20, 40, 0,  40, 0,  0  ];
+        $random_build = mt_rand( 0, 9 );
+        
         $_SESSION = [
             'acquire' => [
                 'action'     => true,  # enable/disable action useage
@@ -2099,16 +2188,17 @@ session:{
             'area'    => 1,
             'arrived' => time(),
             'attributes' => [
-                'constitution' => 7,
-                'stamina'      => 7,
-                'strength'     => 13,
-                'agility'      => 10,
-                'precision'    => 7,
-                'luck'         => 1
+                'constitution' => 80 + $base_con["{$random_build}"],
+                'stamina'      => 80 + $base_stam["{$random_build}"],
+                'strength'     => 80 + $base_str["{$random_build}"],
+                'agility'      => 80 + $base_agi["{$random_build}"],
+                'precision'    => 80 + $base_pre["{$random_build}"],
+                'luck'         => 80 + $base_luck["{$random_build}"]
             ],
             'combat' => [
                 'currently'        => false,
                 'last'             => time(),
+                'log'              => [],
                 'lost'             => 0,
                 'ran'              => 0,
                 'steps_since_last' => 0,
@@ -2119,7 +2209,7 @@ session:{
             'current_season' => 'autumn',
             'dead'           => false,
             'died'           => 0,
-            'exp'            => 0,
+            'exp'            => 7632,
             'id'             => (int)time() . mt_rand( 0, 1024 ),
             'lvl'            => 1,
             'map_display' => true,
@@ -4967,11 +5057,47 @@ templating:{
                                     $resourcetable["{$tdisp}"]['type'] == 'ladder'
                                 ){ }
                                 else{
-                                    if( isset( $v['decay'] ) ){
-                                        if( $v['decay'] > 0 ){
-                                            $score  = $score - (int)".{$v['decay']}";
-                                            $extra .= '<span class="popup mob"><strong>';
-                                            $extra .= $v['decay'] . '</strong></span>';
+                                    if( isset( $player['nearby'] ) ){
+                                        if( in_array( $k, $player['nearby'] ) ){
+                                            if( isset( $v['decay'] ) ){
+                                                if( $v['decay'] > 0 ){
+                                                    if( ! isset( $_SESSION['coords']["{$k}"]['mob'] ) ){
+                                                        $mobcon  = mt_rand( 0, $_SESSION['attributes']['constitution'] );
+                                                        $mobstam = mt_rand( 0, $_SESSION['attributes']['stamina'] );
+                                                        $mobstr  = mt_rand( 0, $_SESSION['attributes']['strength'] );
+                                                        $mobagi  = mt_rand( 0, $_SESSION['attributes']['agility'] );
+                                                        $mobpre  = mt_rand( 0, $_SESSION['attributes']['precision'] );
+                                                        $mobluck = mt_rand( 0, $_SESSION['attributes']['luck'] );
+                                                        $mobexp  = mt_rand( 0, $_SESSION['area'] * 10 );
+                                                        $_SESSION['coords']["{$k}"]['mob'] = [$mobcon,$mobstam,$mobstr,$mobagi,$mobpre,$mobluck,$mobexp];
+                                                        $mob = $_SESSION['coords']["{$k}"]['mob'];
+                                                        $_SESSION['coords']["{$k}"]['mob'] = _quantatt(
+                                                                [
+                                                                    'constitution' => $mob[0],
+                                                                    'stamina'      => $mob[1],
+                                                                    'strength'     => $mob[2],
+                                                                    'agility'      => $mob[3],
+                                                                    'precision'    => $mob[4],
+                                                                    'luck'         => $mob[5],
+                                                                    'exp'          => $mob[6]
+                                                                ]
+                                                            );
+                                                        $mobcon = $mobstam = $mobstr = $mobagi = $mobpre = $mobluck = $mobexp = NULL;
+                                                        unset( $_SESSION['coords']["{$k}"]['decay'] );
+                                                    }
+                                                }
+                                            }
+                                            if( isset( $_SESSION['coords']["{$k}"]['mob'] ) ){
+                                                if( is_array( $_SESSION['coords']["{$k}"]['mob'] ) ){
+                                                    $mob = $_SESSION['coords']["{$k}"]['mob'];
+                                                    $m_action               = $mob['action'];
+                                                    $m_health               = $mob['health'];
+                                                    $m_exp                  = $mob['exp'];
+                                                    $score  = $score - (int)".{$m_exp}";
+                                                    $extra .= '<span class="popup mob"><strong>';
+                                                    $extra .= $m_health . '</strong></span>';
+                                                }
+                                            }
                                         }
                                     }
                                 }
@@ -5761,7 +5887,7 @@ if( $_SESSION['map_display'] !== true ){
 
 
 
-
+#var_dump( $_SESSION['combat']['log'] );
 
 
 
