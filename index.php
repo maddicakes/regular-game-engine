@@ -2019,32 +2019,54 @@ GET:{
                                             }
                                         }
                                         $p_melee_damage         = $p_current_battle['melee_damage'];
-                                            
                                         $p_parry                = $p_current_battle['parry'];
                                         $p_strikethrough_chance = $p_current_battle['strikethrough_chance'];
                                         $p_strikethrough_value  = $p_current_battle['strikethrough_value'];
+
+
+
+
+                                        /** Combat initiated, mob still alive */
                                         if( $m_health > 0 ){
-                                            if( $p_hit_chance  > $m_dodge ){             $m_dodge          = $p_hit_chance - $m_dodge; }
-                                            if( $p_hit_chance  > $m_evasion_chance ){    $m_evasion_chance = $p_hit_chance - $m_evasion_chance; }
-                                            if( $p_parry      >= $m_parry ){             $m_hit_chance     = $m_hit_chance - ( $m_hit_chance / 4 ); }
-                                            if( $p_hit_chance <= $m_evasion_chance ){    $p_hit_chance     = $m_evasion_chance - $p_hit_chance; }
-                                            if( $p_hit_chance <= $m_dodge ){             $p_hit_chance     = $m_dodge - $p_hit_chance; }
-                                            $nothing  = 300 - $m_dodge - $m_evasion_chance - $m_hit_chance - $m_parry;
-                                            $tactic_a = _random( [ 'nothing' => $nothing, 'dodge' => $m_dodge,      'evade' => $m_evasion_chance, 'parry' => $m_parry ] );
+                                            
+                                            if( $p_hit_chance > $m_dodge ){
+                                                $m_dodge = $p_hit_chance - $m_dodge;
+                                            }
+                                            $will_dodge = _random( [ 'dodge' => $m_dodge, 'nothing' => 100 - $m_dodge ] );
+                                            if( $will_dodge == 'dodge' ){ $m_parry = 0; }
+                                            if( $p_hit_chance  > $m_evasion_chance ){
+                                                $m_evasion_chance = $p_hit_chance - $m_evasion_chance; 
+                                            }
+                                            $will_evade = _random( [ 'evade' => $m_evasion_chance, 'nothing' => 100 - $m_evasion_chance ] );
+                                            if( $p_parry >= $m_parry ){
+                                                $m_hit_chance = $m_hit_chance - ( $m_hit_chance / 4 ); 
+                                            }
+                                            if( $p_hit_chance <= $m_evasion_chance ){
+                                                $p_hit_chance = $m_evasion_chance - $p_hit_chance; 
+                                                if( $will_dodge == 'dodge' ){
+                                                    $p_hit_chance = 0;
+                                                }
+                                            }
+                                            if( $p_hit_chance <= $m_dodge ){ 
+                                                $p_hit_chance = $m_dodge - $p_hit_chance; 
+                                            }
+
+                                            $tactic_a = _random( [ 'dodge' => $m_dodge, 'evade' => $m_evasion_chance, 'parry' => $m_parry ] );
+                                            
                                             $player_a = _random( [ 'hit'   => $p_hit_chance, 'miss'  => ( 100 - $p_hit_chance ) ] );
                                             if( $player_a == 'hit' ){
                                                 if( $tactic_a == 'evade' ){
-                                                    $_SESSION['combat']['log']['mob'][] = "::Evaded for {$m_evasion_value}";
+                                                    
                                                     $p_melee_damage = $p_melee_damage - $m_evasion_value;
                                                 }
                                                 elseif( $tactic_a == 'parry' ){
                                                     $parry_dmg = $p_melee_damage / 4;
                                                     $_SESSION['health'] = $_SESSION['health'] - $parry_dmg;
-                                                    $_SESSION['combat']['log']['mob'][] = "::Parried for for {$parry_dmg}";
+                                                    
                                                     $p_melee_damage = 0;
                                                 }
                                                 elseif( $tactic_a == 'dodge' ){
-                                                    $_SESSION['combat']['log']['mob'][] = '::Dodged';
+                                                    
                                                     $p_melee_damage = 0;
                                                 }
                                                 else{
@@ -2052,14 +2074,23 @@ GET:{
                                                         $mob_b = _random( [ 'crit' => $m_critical_hit_chance, 'strikethrough' => $m_strikethrough_chance ] );
                                                         if( $mob_b == 'crit' ){
                                                             $m_melee_damage = $m_melee_damage + $m_melee_damage * ( mt_rand( 1, 2 ) );
-                                                            if( _random( [ 'block' => $p_block_chance, 'nothing' => ( 100 - $p_block_chance ) ] ) == 'block' ){
+
+
+                                                            if(
+                                                                _random(
+                                                                    [
+                                                                        'block'   => $p_block_chance, 
+                                                                        'nothing' => ( 100 - $p_block_chance ) 
+                                                                    ]
+                                                                ) == 'block' 
+                                                            ){
                                                                 $m_melee_damage = $m_melee_damage - $p_block_value;
                                                             }
+
                                                         }
                                                         elseif( $mob_b == 'strikethrough' ){
                                                             $m_melee_damage = $m_melee_damage + ( $m_melee_damage / $m_strikethrough_value ) * 100;
                                                         }
-                                                        $_SESSION['health'] = $_SESSION['health'] - $m_melee_damage;
                                                     
                                                     $player_b = _random( [ 'crit' => $p_critical_hit_chance, 'strikethrough' => $p_strikethrough_chance ] );
                                                     if( $player_b == 'crit' ){
@@ -2073,7 +2104,7 @@ GET:{
                                                     }
                                                 }
                                                 if( $m_health - $p_melee_damage <= 0 ){
-                                                    unset( $_SESSION['combat']['log'] );
+                                                    
                                                     $_SESSION['coords']["{$_SESSION['currentcoord']}"]['mob'] = 'RIP';
                                                     $_SESSION['exp'] = $_SESSION['exp'] + $m_exp;
                                                 }
@@ -2082,8 +2113,9 @@ GET:{
                                                 }
                                             }
                                             else {
-                                                $_SESSION['combat']['log']['player'][] = "::Missed (Hit chance: {$p_hit_chance}";
+                                                
                                             }
+                                            $_SESSION['health'] = $_SESSION['health'] - $m_melee_damage;
                                             $_SESSION['combat']['last'] = time();
                                             
                                         }
@@ -2167,7 +2199,7 @@ session:{
     /** Setup the initial $_SESSION array ~~~~~~~~~~~~~ */
     if( ! isset( $_SESSION['started'] ) ){
 
-        # Random Build 0   1   2   3   4   5   6   7   8   9
+        # Random Build    0   1   2   3   4   5   6   7   8   9
         $base_str     = [ 0,  50, 60, 0,  0,  40, 50, 0,  85, 50 ];
         $base_con     = [ 25, 0,  0,  40, 0,  60, 65, 0,  85, 50 ];
         $base_stam    = [ 0,  50, 70, 60, 20, 0,  65, 60, 40, 0  ];
@@ -2179,7 +2211,11 @@ session:{
         $_SESSION = [
             'acquire' => [
                 'action'     => true,  # enable/disable action useage
-                'encounters' => true,  # enable/disable random battle encounters
+                # As of va2.1 we're going to disable this (for now) as the 
+                # random battle system really isn't functional (currently)
+                # so throwing users into battles that do nothing is kind of
+                # sadistic, right?
+                'encounters' => false, # enable/disable random battle encounters
                 'falldamage' => true,  # enable/disable fall damage
                 'gravity'    => false, # enable/disable gravity for all
                 'resources'  => true,  # enable/disable resource gathering
@@ -2209,8 +2245,21 @@ session:{
             'current_season' => 'autumn',
             'dead'           => false,
             'died'           => 0,
+            'equipment'      => [
+                'head'       => '',
+                'chest'      => '',
+                'legs'       => '',
+                'feet'       => '',
+                'arms'       => '',
+                'hands'      => '',
+                'hand_left'  => '',
+                'hand_right' => '',
+                'accessory_a'=> '',
+                'accessory_b'=> ''
+            ],
             'exp'            => 7632,
             'id'             => (int)time() . mt_rand( 0, 1024 ),
+            'inventory'      => [],
             'lvl'            => 1,
             'map_display' => true,
             'playerposition' => '1/4',
@@ -4739,7 +4788,7 @@ scene:{
             $toolbelt = NULL;
             $tools = [
                 'destroy'   => 'destroy',
-                'minicoord' => 'mine',
+                #'minicoord' => 'mine',
                 'swap'      => 'swap',
                 'tunnel'    => 'reinforce',
                 'ladder'    => 'ladder',
@@ -4891,13 +4940,9 @@ templating:{
     }
     $movementkeys = '<a href="./?moveleft">&#8656;</a><a href="./?moveup">&#8657;</a><a href="./?moveright">&#8658;</a><a href="./?movedown">&#8659;</a>';
     $exit = '<a href="./?">o u o</a>';
-    if( isset( $_SESSION['currentcoord'] ) )
+    if( isset( $_SESSION['currentcoord'] ) ){
         $exit = '<a href="./?x">x _ x</a>';
-
-
-
-
-
+    }
 
     $header .= 
         '<!DOCTYPE HTML>'.
@@ -4911,10 +4956,6 @@ templating:{
 
     $template .= "<main class='{$rainingcss}'>";
     $template .= isset( $_GET['r'] ) ? '<div class="reset"><a href="./?r&rr">yes</a><a href="./">no</a></div>' : '';
-
-
-
-
 
     if( $_SESSION['map_display'] !== false ){
 
@@ -5175,8 +5216,9 @@ templating:{
                         else{
                             $dispthis = false;
                         }
-                        if( $dispthis !== false )
+                        if( $dispthis !== false ){
                             $mapoutput .= "<span{$tiletile}>";
+                        }
                         if( ! is_NULL( $currenttile ) ){
                             if( $dispthis !== false ){
                                 $mapoutput .= '<a class="move w" href="./?playerleft"><span>&larr;</span></a>';
@@ -5766,8 +5808,9 @@ templating:{
                                                     if(!isset($grpA[1]))
                                                         $mapoutput .= "<a href='./?/{$posA}/{$d}'>";
                                                     $mapoutput .= $face;
-                                                    if(!isset($grpA[1]))
+                                                    if(!isset($grpA[1])){
                                                         $mapoutput .= "</a>";
+                                                    }
                                                     $mapoutput .= '</p>';
                                                 }
                                             }
