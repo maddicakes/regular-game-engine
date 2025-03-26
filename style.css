@@ -343,6 +343,24 @@ color:#f9ffc7;
             width:420px;
             height:420px;
             overflow:hidden;
+            & div.y{
+                margin:0 0 1px;
+                clear:   both;
+                display: block;
+                position:relative;
+                & span.y{
+                    border-radius:   0 360px 360px;
+                    background-color:#000;
+                    padding:         5px 5px 5px 10px;
+                    font-size:       9px;
+                    line-height:     9px;
+                    left:            -5px;
+                    top:             10px;
+                    position:        absolute;
+                    display:         block;
+                    z-index:         902109210;
+                }
+            }
         }
         &.options{
             padding: 20px;
@@ -463,13 +481,29 @@ color:#f9ffc7;
         100% { background-color: #a31430; opacity: 1;}
     }    
     .box{
-        display:         inline-block;
-        margin:          0 0 0 0;
-        position:        relative;
-        width: 60px;
-        height:60px;
-        padding:         0;
-        content:'';
+        content:  '';
+        display:  inline-block;
+        height:   62px;
+        margin:   -1px 0 -1px 0;
+        padding:  0;
+        position: relative;
+        width:    60px;
+        box-shadow: 
+            inset 0 0    30px #000,
+            inset 0 10px 20px #6426ab;
+
+        &.nothing{
+            box-shadow: none;
+            border: 1px solid #000;
+            margin: -1px;
+        }
+        &.nothingbarrier{
+            box-shadow: none;
+            background-color: #1e2126;
+            width:            62px;
+            height:           62px;
+            margin:           -1px;
+        }
         &:before{
             background-color:#c9c6a1;
             border-radius:   30%;
@@ -726,7 +760,7 @@ color:#f9ffc7;
                 }
             }
         }
-        &.nores .resources{ height: 10px; }
+        &.nores .resources{ height: 14px; }
         &.noscore .resources{ display: none; }
         & .resources{
             background-color:#000;
@@ -737,27 +771,34 @@ color:#f9ffc7;
             color:           #fff;
             display:         block;
             padding:         0;
-            width:           100%;
+            width:           calc(100% - 110px);
             overflow:        hidden;
             z-index:         1010666;
             position:        absolute;
-            top:30px;
+            top:             30px;
             background-color:#000;
             left:            0;
-            height:90px;
+            height:95px;
             & span{
-                display: inline-block;
-                padding: 10px;
+                display: block;
                 position: relative;
+                &:nth-of-type(odd){ background-color:#121f16;}
                 & a{
-                    position:relative;
+                    display:block;
+                    padding:         5px 15px;
+                    position:        relative;
+                    text-decoration: none;
+                    & code{
+                        float:  right;
+                        margin: 0 15px 0 0;
+                    }
                     & sup{
-                        color:     #c21b1b;
-                        left:      -5px;
-                        font-size:16px;
-                        position:  absolute;
-                        text-align:center;
-                        top:       0;
+                        color:      #c21b1b;
+                        font-size:  16px;
+                        left:       5px;
+                        position:   absolute;
+                        text-align: center;
+                        top:        3px;
                     }
                 }
             }
@@ -776,24 +817,35 @@ color:#f9ffc7;
                     top:0;left:0;width:100%;
                 }
             }
+
             & span.resdisc{
-                background-color:#1c1b0a;
-                padding:5px 5px 1px 5px;
-                position:  absolute;
-                left:0;
-                top: -9px;
-                width:100%;
-                z-index:2;
+                background-color: #1c1b0a;
+                left:             0;
+                padding:          5px 5px 1px 5px;
+                position:         absolute;
+                top:              -9px;
+                width:            100%;
+                z-index:          2;
                 & span{
-                    padding:5px;
                     display: inline-block;
+                    padding: 5px;
+                    &:first-of-type{
+                        background-color: #f8ff9c;
+                        color:            #383830;
+                        letter-spacing:   1px;
+                        margin:           0 0 0 5px;
+                        padding:          5px 10px;
+                        width:            65px;
+                    }
                 }
                 & small{
                     color:     #fff4ba;
                     display:   inline-block;
                     font-size: 8px;
+                    & b{ color: #ff9caf; }
                 }
             }
+
             & .resource{
                 border:  1px solid #000;
                 border-radius:6px;
@@ -878,14 +930,16 @@ color:#f9ffc7;
             margin:0;
             padding:2px 10px;
             z-index:10010;
-            left:85px;
+            left:90px;
             bottom:0;
             position:absolute;
+            width: calc(100% - 90px);
             & span{
                 display:inline-block;
+                width:40px;
                 padding:7px;
                 & strong{
-                    margin: 0 0 0 5px;
+                    float: right;
                 }
             }
         }
@@ -1382,14 +1436,7 @@ top:-3px;
 background-color: #7a5e50;
 }
 
-.box.nothing{
-    border:1px solid #000;
-    margin:-1px;
-}
-.box.nothingbarrier{
-    border:1px solid #000;
-    margin:-1px;
-}
+
 .box.tunnel{
     background-color: rgba(163 135 199/.3);
 }
