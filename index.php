@@ -2,7 +2,7 @@
 
 /**
 *  regular game engine
-*  @version va2.1
+*  @version va2.2
 *  created & maintained by madelynne
 *   ~ https://github.com/maddicakes
 *   ~ https://bsky.app/profile/maddicakes.bsky.social
@@ -53,6 +53,7 @@ defaults:{
     ];
     $mapdisplay = '+ map';
     if( $_SESSION['map_display'] !== false ){ $mapdisplay = '- map'; }
+    $mobcount = 0;
     $resourcesdisplay = '+ res';
     if( $_SESSION['show_resources'] !== false ){ $resourcesdisplay = '- res'; }
     $uidisplay = '+ ui';
@@ -87,6 +88,9 @@ defaults:{
         'unplug',
         'x'
     ];
+}
+
+data:{
     /** ~~~~~~~~~~~~~ */
     /** the data file ~~~~~~~~~~~~~
      *  regular game engine ships with it's own custom data (a 'base game')
@@ -99,11 +103,6 @@ defaults:{
      */
     if( file_exists( __DIR__ . '/data.php' ) ){ include( __DIR__  . '/data.php'); }
     /** ~~~~~~~~~~~~~ */
-
-}
-
-data:{
-
     if( ! isset( $data ) ){
         $data=[
             'opt'=>[
@@ -1292,6 +1291,23 @@ functions:{
     }
     /** ~~~~~~~~~~~~~ */
 
+    /** Return an array of resource top to resource bottom (harvestable)
+     *  @since va2.2
+     */
+    function _resourcelevel( $resource = NULL, $arr = [] ){
+        global $resourcetable;
+        if( ! is_NULL( $resource ) ){
+            if( isset( $resourcetable["{$resource}"]['harv'] ) ){
+                $h = $resourcetable["{$resource}"]['harv'];
+                $arr[] = $h;
+                if( isset( $resourcetable["{$h}"]['harv'] ) ){
+                    return _resourcelevel( $h, $arr );
+                }
+            }
+        }
+        return $arr;
+    }
+
     /** Update a tile's information ~~~~~~~~~~~~~
      *  @since va2
      */
@@ -1318,20 +1334,46 @@ functions:{
 
 }
 
+
 GET:{
-
-    $c    = 0;
-    $grpA = [];
-    $grpB = [];
-    $grpC = [];
-    $grpD = [];
-    $posA = 'h';
-    $selA = 0;
-    $xmax = 64;
-    $ymax = 64;
-
+    GET_defaults:{
+        /** Values
+         *  DEFAULTS:
+         *  ~~~~~~~~~~~~~
+         *  $c    = 0;
+         *  $grpA = [];
+         *  $grpB = [];
+         *  $grpC = [];
+         *  $grpD = [];
+         *  $posA = 'h';
+         *  $selA = 0;
+         *  $xmax = 64;
+         *  $ymax = 64;
+         *  ~~~~~~~~~~~~~
+         *  $c      int     truncate $_GET to this group only
+         *                  best to leave at 0 unless you know
+         *                  what you are doing
+         *  $grpA   array   /?/k[0]/grpA[0]/grpA[1]/
+         *  $grpB   array   /?/k[0]/--/--/grpB[0]/grpB[1]/
+         *  $grpC   array   /?/k[0]/--/--/--/--/grpC[0]/grpC[1]/
+         *  $grpD   array   /?/k[0]/--/--/--/--/--/--/grpD[0]/grpD[1]/
+         *  $posA   str     see: data:{}
+         *  $selA   int     see: data:{}
+         *  $xmax   int     tiles in width size of map  (64x?)
+         *  $ymax   int     tiles in height size of map (?x64)
+         *  ~~~~~~~~~~~~~
+         */
+        $c    = 0;
+        $grpA = [];
+        $grpB = [];
+        $grpC = [];
+        $grpD = [];
+        $posA = 'h';
+        $selA = 0;
+        $xmax = 64;
+        $ymax = 64;
+    }
     if( isset( $_SESSION['playerposition'] ) ){
-
         /** Player positioning
           * @since version alpha
           *     - Various coordinates, originating from player position
@@ -1352,16 +1394,7 @@ GET:{
         $ppcoordsouthwest = "{$ppxp}/{$ppyn}";
         $ppcoordsoutheast = "{$ppxn}/{$ppyn}";
         $player = [
-            'x'         => $ppx,
-            'y'         => $ppy,
-            'north'     => $ppcoordnorth,
-            'south'     => $ppcoordsouth,
             'east'      => $ppcoordeast,
-            'west'      => $ppcoordwest,
-            'northeast' => $ppcoordnortheast,
-            'northwest' => $ppcoordnorthwest,
-            'southwest' => $ppcoordsouthwest,
-            'southeast' => $ppcoordsoutheast,
             'nearby'    => [
                 "{$ppx}/{$ppy}",
                 $ppcoordnorth,
@@ -1372,34 +1405,55 @@ GET:{
                 $ppcoordnorthwest,
                 $ppcoordsouthwest,
                 $ppcoordsoutheast
-            ]
+            ],
+            'north'     => $ppcoordnorth,
+            'northeast' => $ppcoordnortheast,
+            'northwest' => $ppcoordnorthwest,
+            'south'     => $ppcoordsouth,
+            'southeast' => $ppcoordsoutheast,
+            'southwest' => $ppcoordsouthwest,
+            'west'      => $ppcoordwest,
+            'x'         => $ppx,
+            'y'         => $ppy
         ];
-
-        /**
-         *
-         *
-
-            Gravity ~~~~~~~~~~~~~
-            @since version alpha
-
-            $_SESSION['standingon']:    current tile being occupied by player
-            ^ $standingontype corresponds to session key 'standingon'
-            $_SESSION['standingabove']: tile below 'standingon'
-
-            ^ $standingabovetype corresponds to session key 'standingabove'
-            $standingabovedisp corresponds to the 'disp' of the tile (its face)
-
-            Defaults:
-                $standingabovetype: floor
-
-            standing above: floor, wall: do nothing
-            standing on: floor: do nothing
-            standing above: water: do nothing
-            all else: move player down until condition is met
-
-         *
-         *
+        /** X/Y viewable from PlayerPosition
+         *  @bugs: x 1-3 will cut off the last rows
          */
+        $viewablex = [
+            $player['x'] - 3,
+            $player['x'] - 2,
+            $player['x'] - 1,
+            $player['x'],
+            $player['x'] + 1,
+            $player['x'] + 2,
+            $player['x'] + 3,
+        ];
+        $viewabley = [
+            $player['y'] - 3,
+            $player['y'] - 2,
+            $player['y'] - 1,
+            $player['y'],
+            $player['y'] + 1,
+            $player['y'] + 2,
+            $player['y'] + 3
+        ];
+        /** Gravity
+          * @since version alpha
+          * @since version va2.2: cleaned up gravity section, logic, etc.
+          * $_SESSION['standingon']: current tile being occupied by player
+          * ^ $standingontype corresponds to session key 'standingon'
+          * $_SESSION['standingabove']: tile below 'standingon'
+          * ^ $standingabovetype corresponds to session key 'standingabove'
+          * $standingabovedisp corresponds to the 'disp' of the tile (its face)
+          * ~~~~~~~~~~~~~
+          * If/then:
+          * $standingabovetype: floor
+          * standing above:     floor, wall: do nothing
+          * standing on:        floor:       do nothing
+          * standing above:     water:       see: skills: swimming
+          * all else:           open,air:    move player down until 
+          *                                   condition is met
+          */
         $standingabovedisp = NULL;
         $standingunderdisp = NULL;
         if( isset( $_SESSION['standingon'] ) ){
@@ -1411,6 +1465,19 @@ GET:{
                         $standingabovetype = $resourcetable["{$standingabovedisp}"]['type'];
                     }
                 }
+                /** Calculating fall damage ~~~~~~~~~~~~~ 
+                 *  1. Player is standing above an open or air tile
+                 *  2. Player is standing under an open or air tile
+                 *  3. Player is standing on an open or air tile
+                 *  4. Initiate fall
+                 *  5. Once player reaches a non-open/air tile:
+                 *   5a. Set a tef so that healing over time doesn't 
+                 *       immediately health them and
+                 *   5b. unset airborne status
+                 *   5c. Drain health for fall damage while allowing
+                 *       for agility (+etc) to reduce overall damage
+                 */
+                /** Player is no longer standing on 'ground' */
                 if( isset( $standingabovetype ) ){
                     if( $standingabovetype == 'open' OR $standingabovetype == 'air' ){
                         if( isset( $_SESSION['coords']["{$player['north']}"]['disp'] ) ){
@@ -1418,46 +1485,65 @@ GET:{
                             if( isset( $resourcetable["{$standingunderdisp}"]['type'] ) ){
                                 $standingundertype = $resourcetable["{$standingunderdisp}"]['type'];
                             }
+                            /** One open/air type above another creates a 'fallable' area */
                             if( $standingundertype == 'air' OR $standingundertype == 'open' ){
-                                if( $standingontype == 'air' OR $standingontype == 'open' ){
+                            if( $standingontype    == 'air' OR $standingontype    == 'open' ){
+                                    /** Initiate fall */
                                     if( ! isset( $_SESSION['temporary_airborne' ] ) ){
                                         $_SESSION['temporary_airborne' ] = 0;
                                     }
                                     else{
                                         $_SESSION['temporary_airborne'] = $_SESSION['temporary_airborne'] + 1;
                                     }
-                                }
+                            }
                             }
                         }
                     }
+                    /** Falling */
                     else{
+                        /** Use temporary_airborne to calculate fall damage */
                         if( isset( $_SESSION['temporary_airborne'] ) ){
+                            /** Is fall damage enabled in options? */
                             if( $_SESSION['acquire']['falldamage'] !== false ){
-                                $_SESSION['health'] = ( $_SESSION['health'] - $_SESSION['temporary_airborne'] * 10 ) + round( $_SESSION['attributes']['agility'] / 100 );
+                                $_SESSION['health'] = 
+                                    $_SESSION['health']
+                                    /** How many tiles down * 10 */
+                                    - ( $_SESSION['temporary_airborne'] * 10 )
+                                    /** Attribute:agility reduces fall damage 1:100 */
+                                    + round( $_SESSION['attributes']['agility'] / 100 );
                             }
+                            /** Initialize a tef to keep health from immediately healing player */
+                            $_SESSION['combat']['last'] = time();
                             unset( $_SESSION['temporary_airborne'] );
                         }
                     }
                 }
+                /** ~~~~~~~~~~~~~ */
                 if( isset( $_SESSION['coords']["{$player['north']}"]['disp'] ) ){
                     $standingunderdisp = $_SESSION['coords']["{$player['north']}"]['disp'];
                     if( isset( $resourcetable["{$standingabovedisp}"]['type'] ) ){
                         $standingundertype = $resourcetable["{$standingabovedisp}"]['type'];
                     }
                 }
-                if( ! isset( $standingabovetype ) )  $standingabovetype = 'floor';
-                if( $standingontype == 'ladder' )    $standingabovetype = 'floor';
-                if( $standingabovetype == 'ladder' ) $standingontype = 'floor';
-                if( $standingabovetype == 'floor' OR $standingontype == 'floor' OR $standingabovetype == 'wall'  ){}
-                else{
-                    if( $standingabovetype == 'water' ){}
-                    else{
-                        if( ! is_NULL( $standingabovedisp ) ){
-                            $_SESSION['playerposition'] = $player['south'];
-                            header( 'Location: ./' );
-                        }
+                if( ! isset( $standingabovetype ) ){
+                    $standingabovetype = 'floor';
+                }
+                /** Look, ladders are floors, ok? */
+                $droptheplayer     = true;
+                $standingontype    = $standingontype == 'ladder'    ? 'floor' : $standingontype;
+                $standingabovetype = ! isset( $standingabovetype )  ? 'floor' : $standingabovetype;
+                $standingabovetype = $standingabovetype == 'ladder' ? 'floor' : $standingabovetype;
+                $droptheplayer     = $standingabovetype == 'floor'  ? false   : $droptheplayer;
+                $droptheplayer     = $standingabovetype == 'wall'   ? false   : $droptheplayer;
+                $droptheplayer     = $standingabovetype == 'water'  ? false   : $droptheplayer;
+                $droptheplayer     = $standingontype == 'floor'     ? false   : $droptheplayer;
+                if( $droptheplayer !== false ){
+                    /** We can only drop them to a tile that exists */
+                    if( ! is_NULL( $standingabovedisp ) ){
+                        $_SESSION['playerposition'] = $player['south'];
+                        header( 'Location: ./' );
                     }
-                }                
+                }
             }
         }
 
@@ -1622,9 +1708,7 @@ GET:{
                     if( isset( $_SESSION['coords']["{$right}"]["{$disp}"] ) ){
                         $move = true;
                         if( $move !== false ){
-                            if( $playereasttype == 'air' OR $playereasttype == 'open' OR $playereasttype == 'ladder' ){
-
-                            }
+                            if( $playereasttype == 'air' OR $playereasttype == 'open' OR $playereasttype == 'ladder' ){}
                             /** swim skill equates to water traversal
                              *  @since version alpha
                              */                             
@@ -1635,13 +1719,15 @@ GET:{
                                     }
                                 }
                             }
-                            else{
-                                $move = false;
-                            }
+                            else{ $move = false; }
                         }
-                        if( $_SESSION['coords']["{$right}"]['decay'] <= 0 ){
-                            $move = true;
-                        }
+                        /** mob _should be an array, otherwise it's nothing (but notably nothing if it's boolean)
+                         *  @since va2.2
+                         *     - updated from ['decay'] as mob factor to actual mob arrays
+                         */
+                        if( isset( $_SESSION['coords']["{$right}"]['mob'] ) AND ! is_bool( $_SESSION['coords']["{$right}"]['mob'] ) ){ $move = false; }
+                        else { $move = true; }
+
                         if( $move !== false ){
                             if( isset( $_SESSION['examining'] ) ) unset($_SESSION['examining']);
                             _attrup( [ 'attr' => 'stamina' ] );
@@ -1689,9 +1775,8 @@ GET:{
                                 $move = false;
                             }
                         }
-                        if( $_SESSION['coords']["{$left}"]['decay'] <= 0 ){
-                            $move = true;
-                        }
+                        if( isset( $_SESSION['coords']["{$left}"]['mob'] ) AND ! is_bool( $_SESSION['coords']["{$left}"]['mob'] ) ){ $move = false; }
+                        else { $move = true; }
                         if( $move !== false ){
                             if( isset( $_SESSION['examining'] ) ) unset($_SESSION['examining']);
                             _attrup( [ 'attr' => 'stamina' ] );
@@ -1732,9 +1817,8 @@ GET:{
                                 $move = false;
                             }
                         }
-                        if( $_SESSION['coords']["{$up}"]['decay'] <= 0 ){
-                            $move = true;
-                        }
+                        if( isset( $_SESSION['coords']["{$up}"]['mob'] ) AND ! is_bool( $_SESSION['coords']["{$up}"]['mob'] ) ){ $move = false; }
+                        else { $move = true; }
                         if( $move !== false ){
                             if( isset( $_SESSION['examining'] ) ){
                                 unset($_SESSION['examining']);
@@ -1791,9 +1875,8 @@ GET:{
                                 $move = false;
                             }
                         }
-                        if( $_SESSION['coords']["{$down}"]['decay'] <= 0 ){
-                            $move = true;
-                        }
+                        if( isset( $_SESSION['coords']["{$down}"]['mob'] ) AND ! is_bool( $_SESSION['coords']["{$down}"]['mob'] ) ){ $move = false; }
+                        else { $move = true; }
                         if( $move !== false ){
                             if( isset( $_SESSION['examining'] ) ) unset($_SESSION['examining']);
                             _attrup( [ 'attr' => 'stamina' ] );
@@ -1934,6 +2017,7 @@ GET:{
                             'born'    => time(),
                             'offdisp' => 'tunnel',
                             'powered' => true,
+                            'mob'     => false
                         ];
                     }
                     header( 'Location:./?tunnel' );
@@ -2104,8 +2188,7 @@ GET:{
                                                     }
                                                 }
                                                 if( $m_health - $p_melee_damage <= 0 ){
-                                                    
-                                                    $_SESSION['coords']["{$_SESSION['currentcoord']}"]['mob'] = 'RIP';
+                                                    unset( $_SESSION['coords']["{$_SESSION['currentcoord']}"]['mob'] );
                                                     $_SESSION['exp'] = $_SESSION['exp'] + $m_exp;
                                                 }
                                                 else{
@@ -2736,8 +2819,14 @@ session:{
         if( isset( $objects ) ){
             $donotbuildover = array_merge( $objects, $donotbuildover );
         }
-        for($y=1;$y<=$ymax;$y++){
-            for($x=1;$x<=$xmax;$x++){
+
+
+
+
+
+        
+        for( $y = 1; $y <= $ymax; $y++ ){
+            for( $x = 1; $x <= $xmax; $x++ ){
                 $ct = NULL; $type = _resource();
                 if( ! isset( $_SESSION['coords']["{$x}/{$y}"] ) ){
                     _tileupdate( [ 'x' => $x, 'y' => $y, 'type' => $type ] );
@@ -2869,9 +2958,12 @@ session:{
                             }
                         }
                     }
+
                     if( $y < 5 ){
                         $ct = 'nothingbarrier';
                     }
+
+
                     if( isset( $player ) ){
                         if( in_array( "{$x}/{$y}", $player['nearby'] ) ){
                             if( $ct == 'doorautomatic' ){
@@ -4805,27 +4897,29 @@ scene:{
             
         }
         resources:{
+            $held         = 0;
             $resourcesout = NULL;
+            $totl         = 0;
             if( isset( $_SESSION['resources'] ) AND $_SESSION['worldpower'] !== false ){
                 if( $_SESSION['show_resources'] !== false ){
                     $resourcesout .=  '<div class="resources">';
+
                     # https://math.stackexchange.com/a/2040617
                     # 1. In the book Meaning, Logic and Ludics-By Alain Lecomte, 
                     # The writer says that: Let U and B be two positive designs 
                     # we denote tensor product of U and B by U⊙B
                     # 2. In the book Dag Prawitz on Proofs and Meaning: The writer says 
                     # that α⊙β means that either β is derivable from α or is α derivable from β
+
                     $resourcesout .=  '<div>';
-                    $held = 0;
-                    $totl = 0;
                     if( isset( $_SESSION['resources'] ) ){
                         $resourcesout .=  '<div>';
                         $resources = array_reverse( $_SESSION['resources'] );
                         foreach( $resources as $k => $v ){
+                            $extra       = NULL;
+                            $dk          = $k;
                             $resourceidc = $k;
-                            $extra = NULL;
-                            $dk = $k;
-                            $selected = NULL;
+                            $selected    = NULL;
                             if( isset( $resourcetable ) ){
                                 if( isset( $resourcetable["{$k}"] ) ){
                                     if( $v > 0 ){
@@ -4837,35 +4931,56 @@ scene:{
                                             }
                                         }
                                     }
-                                    if( isset( $resourcetable["{$k}"]["{$disp}"] ) )
+                                    if( isset( $resourcetable["{$k}"]["{$disp}"] ) ){
                                         $dk = $resourcetable["{$k}"]["{$disp}"];
-                                    $resourcesout .=  "<span><a href='./?/resource/{$resourceidc}'>{$selected} {$dk}  {$v}</a></span>";
+                                    }
+                                    $resourcesout .=  "<span><a href='./?/resource/{$resourceidc}'>{$selected}{$dk}<code>{$v}</code></a></span>";
                                 }
                             }
                         }
                         $resourcesout .=  '</div>';
                     }
                     $resourcesout .=  '</div>';
-                    $resourcesout .=  '<div><span class="resdisc">';
-                    if( $_SESSION['acquire']['score'] !== false ){
-                        $resourcesout .=  '<span>AREA ' . $_SESSION['area'] . '</span>';
-                        scorekeeper:{
-                            $score = NULL;
-                            $score_area  = isset( $_SESSION['score_area'] )  ? $_SESSION['score_area']  : 0;
-                            $score_total = isset( $_SESSION['score_total'] ) ? $_SESSION['score_total'] : 0;
-                            $score_avail = isset( $opts['score'] )           ? $opts['score']           : 0;
-                        }
-                        if( $score_avail < 0 ){
-                            $score_avail = 0;
-                        }
-                        $resourcesout .= '<span>' . $score_total . '<small>('.$score_area.'/'.$score_avail.')</small></span>';
+
+
+
+
+
+                    #area #resources #score
+                    area_score_resource_information:{
+                    if( $_SESSION['acquire']['score'] !== false OR $_SESSION['acquire']['resources'] !== false ){
+                            $resourcesout .=  '<div><span class="resdisc">';
+                            scorekeeper:{
+                                if( $_SESSION['acquire']['score'] !== false ){
+                                    $resourcesout .=  "<span>AREA {$_SESSION['area']}</span>";
+                                        $score       = NULL;
+                                        $score_area  = isset( $_SESSION['score_area']  ) ? $_SESSION['score_area']  : 0;
+                                        $score_total = isset( $_SESSION['score_total'] ) ? $_SESSION['score_total'] : 0;
+                                        $score_avail = isset( $opts['score']           ) ? $opts['score']           : 0;
+                                }
+                                $score_red = NULL;
+                                if( $score_avail < 0 ){ 
+                                    $score_red   = "<b>{$score_avail}</b>";
+                                    $score_avail = NULL;
+                                }
+                                $resourcesout .= "<span>{$score_total} <small>{$score_area}/{$score_avail}{$score_red}</small></span>";
+                            }
+                            resurcecounter:{
+                                if( $_SESSION['acquire']['resources'] !== false ){
+                                    $resourcetbltotal = sizeof( $resourcetable );
+                                    $resourcesout .= "<span>{$totl} <small>{$held}/{$resourcetbltotal}</small></span>";
+                                }
+                            }
+                            $resourcesout .= '</span></div>';
                     }
-                    if( $_SESSION['acquire']['resources'] !== false ){
-                        $resourcesout .= '<span>' . $totl . '<small>('.$held.'/'  . sizeof($resourcetable).')</small></span>';
                     }
-                    $resourcesout .= '</span></div>';
-                    $resourcesout .=  '</div>';
+
+
+                    $resourcesout .= '</div>';
+
+
                 }
+
             }
         }
         /**
@@ -4988,7 +5103,7 @@ templating:{
                     $x               = isset( $coords[0] ) ? (int)$coords[0] : 1;
                     $y               = isset( $coords[1] ) ? (int)$coords[1] : 1;
                     $z               = isset( $coords[1] ) ? (int)$coords[1] : 1;
-                    $mapoutput .= $x == 1 ? '<div>' : '';                        
+                    $mapoutput .= $x == 1 ? "<div class='y'><span class='y'>{$y}</span>" : '';
                     /** Water sources for _hygrometer ~~~~~~~~~~~~~
                      */
                     if( $tdisp == 'water'   ){ $totalwatersources = (int)$totalwatersources + (int).001; }
@@ -5133,8 +5248,13 @@ templating:{
                                                     $mob = $_SESSION['coords']["{$k}"]['mob'];
                                                     $m_action               = $mob['action'];
                                                     $m_health               = $mob['health'];
+                                                    if( $m_health <= 0 ){
+                                                        unset( $_SESSION['coords']["{$k}"]['mob'] );
+                                                    }
+                                                    if( is_bool( $mob ) ){
+                                                        unset( $_SESSION['coords']["{$k}"]['mob'] );
+                                                    }
                                                     $m_exp                  = $mob['exp'];
-                                                    $score  = $score - (int)".{$m_exp}";
                                                     $extra .= '<span class="popup mob"><strong>';
                                                     $extra .= $m_health . '</strong></span>';
                                                 }
@@ -5205,10 +5325,11 @@ templating:{
                             $tiletile = " style='{$shadow}z-index:{$z};' id='{$x}/{$y}' class='box {$powerclass}'{$titleout}";
                         }
                         $dispthis = false;
-                        if( in_array( $x, [ $player['x']-3,$player['x']-2,$player['x']-1,$player['x'],$player['x']+1,$player['x']+2,$player['x']+3 ] ) ){
+                        
+                        if( in_array( $x, $viewablex ) ){
                             $dispthis = true;
                         }
-                        if( in_array( $y, [ $player['y']-3,$player['y']-2,$player['y']-1,$player['y'],$player['y']+1,$player['y']+2,$player['y']+3 ] ) ){
+                        if( in_array( $y, $viewabley ) ){
                             if( $dispthis !== false ){
                                 $dispthis = true;
                             }
@@ -5635,6 +5756,8 @@ templating:{
                     header( 'Location:./?r' );
                 }
             }
+
+            if( isset( $_SESSION['coords']["{$k}"]['mob'] ) ){ $mobcount = $mobcount + 1; }
         
         }
         $mapoutput .= '</div>';
@@ -5642,8 +5765,9 @@ templating:{
 
 
 
-
+        #score
         if( $_SESSION['acquire']['score'] !== false ){
+            $score = $score - $mobcount;
             if( $score > 0 ){
                 $score = $score;
             }
