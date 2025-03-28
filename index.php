@@ -1,6 +1,6 @@
 <?php session_start();
+$version = 'va2.4';
 /** regular game engine ~~~~~~~~~~~~~
- *  @version va2.3
  *  created & maintained by madelynne
  *   ~ https://github.com/maddicakes
  *   ~ https://bsky.app/profile/maddicakes.bsky.social
@@ -76,7 +76,6 @@ defaults:{
         'coord',
         'cyclecode',
         'destroy',
-        'examine',
         'flee',
         'jump',
         'ladder',
@@ -101,6 +100,10 @@ defaults:{
         'unplug',
         'x'
     ];
+    $last_action            = isset( $_SESSION['timer']['last_action'] ) ? $_SESSION['timer']['last_action'] : time();
+    $seconds_to_next_action = 1;
+    $seconds_to_next_move   = 1;
+    $tile_disp_arr          = [];
 }
 data:{
     /** ~~~~~~~~~~~~~ */
@@ -198,6 +201,9 @@ data:{
             ],
             'checkpoint' => [
                 'case'  => [],
+                'css'   => [
+                    'background-color' => '#21201f'
+                ],
                 'disp'  => 'checkpoint',
                 'sp'    => 1,
                 'type' => 'floor'
@@ -234,6 +240,9 @@ data:{
                     'combine' => [
                         'water' => 'muddybank' 
                     ]
+                ],
+                'css'  => [
+                    'background-color' => '#695b42'
                 ],
                 'disp' => 'dirt',
                 'harv' => 'soil',
@@ -304,6 +313,9 @@ data:{
                 'type' => 'ladder'
             ],
             'lake' => [
+                'css'  => [
+                    'background-color' => '#484269'
+                ],
                 'disp' => 'lake',
                 'dnh'  => 1,
                 'sp'   => 1,
@@ -388,6 +400,9 @@ data:{
                 'type' => 'air'
             ],
             'nothingbarrier' => [
+                'css'  => [
+                    'background-color' => 'rgba(77 54 74/.4)'
+                ],
                 'disp' => ' [ ] ',
                 'dnh'  => 1,
                 'type' => 'air'
@@ -402,6 +417,9 @@ data:{
             ],
             'playerproperty' => [
                 'case' => [],
+                'css'  => [
+                    'background-color' => '#34213b'
+                ],
                 'disp' => 'o u o',
                 'dnh'  => 1,
                 'type' => 'floor'
@@ -441,6 +459,9 @@ data:{
             ],
             'ravine' => [
                 'case' => [],
+                'css'  => [
+                    'background-color' => '#364d36'
+                ],
                 'dnh'  => 1,
                 'sp'   => 1,
                 'type' => 'floor'
@@ -516,6 +537,9 @@ data:{
             ],
             'shallow' => [
                 'case' => [],
+                'css'  => [
+                    'background-color' => '#425569'
+                ],
                 'disp' => 'shallow water',
                 'dnh'  => 1,
                 'swim' => 0,
@@ -552,6 +576,9 @@ data:{
             ],
             'stonepath' => [
                 'case'  => [],
+                'css'   => [
+                    'background-color' => '#4d4946'
+                ],
                 'disp'  => 'stonepath',
                 'harv'  => 'path',
                 'mob'   => [
@@ -600,6 +627,9 @@ data:{
             ],
             'trail' => [
                 'case' => [],
+                'css'  => [
+                    'background-color' => '#9c9035'
+                ],
                 'disp' => 'trail',
                 'dnh'  => 1,
                 'sp'   => 9,
@@ -651,6 +681,9 @@ data:{
             ],
             'unknown' => [
                 'case' => [],
+                'css'  => [
+                    'background-color' => '#4d363b'
+                ],
                 'disp' => '? ? ?',
                 'dnh'  => 1,
                 'sp'   => 1,
@@ -681,13 +714,16 @@ data:{
                 'case'  => [
                     'combine' => []
                 ],
-                'disp'    => 'water',
-                'harv'    => 'prevwater',
-                'mine'    => 0,
-                'res'     => 'water',
-                'sp'      => 45,
-                'swim'    => 1,
-                'type'    => 'water'
+                'css'     => [
+                    'background-color' => '#355a9c'
+                ],
+                'disp'  => 'water',
+                'harv'  => 'prevwater',
+                'mine'  => 0,
+                'res'   => 'water',
+                'sp'    => 45,
+                'swim'  => 1,
+                'type'  => 'water'
             ],
             'weaksandstone' => [
                 'case'  => [],
@@ -745,6 +781,9 @@ data:{
 
 
             'path' => [
+                'css'   => [
+                    'background-color' => '#66625c'
+                ],
                 'disp'  => 'path',
                 'res'   => 'dirt',
                 'harv'  => 'soil',
@@ -978,87 +1017,6 @@ functions:{
         return $decay;
     }
     /** ~~~~~~~~~~~~~ */
-    /** Return a display for unlocking a locked (thing) ~~~~~~~~~~~~~
-     *  @since version alpha
-     *  @since va2:
-     *      Needs to be reworked into the current system
-     */
-    function _lockedroomcode( $opts = [] ){
-        if( isset( $opts['code'] ) ){
-            $out = '<span class="lockeddoorconsole">';
-            $codecorrect = false;
-            if( ! isset( $_SESSION['unlocked']["{$_SESSION['examining']}"] ) ){
-                $_SESSION['unlocked']["{$_SESSION['examining']}"] = [ 0 => 6, 1 => 6, 2 => 6, 3 => 6 ];
-            }
-            if( isset( $_SESSION['unlocked']["{$_SESSION['examining']}"] ) ){
-                $ec = $_SESSION['unlocked']["{$_SESSION['examining']}"];
-                if( "{$ec[0]}{$ec[1]}{$ec[2]}{$ec[3]}" == "{$opts['code'][0]}{$opts['code'][1]}{$opts['code'][2]}{$opts['code'][3]}" ){
-                    $codecorrect = true;
-                }
-            }
-            if( $codecorrect !== true ){
-                $out .= '&#128274; :: Room Locked [ ';
-                $curcod = $_SESSION['unlocked']["{$_SESSION['examining']}"];
-                if( $curcod[0] == $opts['code'][0] ){
-                    $out .= 'x ';
-                }
-                else{
-                    $out .= "<a href='./?cyclecode=0'>{$curcod[0]}</a> ";
-                }
-                if( $curcod[1] == $opts['code'][1] ){
-                    $out .= 'x ';
-                }
-                else{
-                    $out .= "<a href='./?cyclecode=1'>{$curcod[1]}</a> ";
-                }
-                if( $curcod[2] == $opts['code'][2] ){
-                    $out .= 'x ';
-                }
-                else{
-                    $out .= "<a href='./?cyclecode=2'>{$curcod[2]}</a> ";
-                }
-                if( $curcod[3] == $opts['code'][3] ){
-                    $out .= 'x ';
-                }
-                else{
-                    $out .= "<a href='./?cyclecode=3'>{$curcod[3]}</a> ";
-                }
-                $out .= ' =/= ';
-                if( $curcod[0] == $opts['code'][0] ){
-                    $out .= 'x ';
-                }
-                else{
-                    $out .= "{$opts['code'][0]} ";
-                }
-                if( $curcod[1] == $opts['code'][1] ){
-                    $out .= 'x ';
-                }
-                else{
-                    $out .= "{$opts['code'][1]} ";
-                }
-                if( $curcod[2] == $opts['code'][2] ){
-                    $out .= 'x ';
-                }
-                else{
-                    $out .= "{$opts['code'][2]} ";
-                }
-                if( $curcod[3] == $opts['code'][3] ){
-                    $out .= 'x ';
-                }
-                else{
-                    $out .= "{$opts['code'][3]} ";
-                }
-                $out .= ' ]';
-            }
-            else {
-                $out .= '&#128275; :: Room Unlocked';
-            }
-            $out .= '</span>';
-            return $out;
-        }
-        return NULL;
-    }
-    /** ~~~~~~~~~~~~~ */
     /** Return an array of information for the player's current status ~~~~~~~~~~~~~
      *  @since va2
      */
@@ -1252,6 +1210,47 @@ functions:{
         }
     }
     /** ~~~~~~~~~~~~~ */
+    
+    function _tileclassinline( $arr = [] ){
+        global $resourcetable;
+        if( ! empty( $arr ) ){
+            $css = NULL;
+            $arr = array_unique( $arr );
+            foreach( $arr as $c ){
+                if( isset( $resourcetable["{$c}"]['css'] ) ){
+                    $css .= ".{$c}{";
+                    foreach( $resourcetable["{$c}"]['css'] as $k => $v ){
+                        $css .= "{$k}:{$v};";
+                    }
+                    $css .= '}';
+                }
+            }
+            return "<style>{$css}</style>";
+        }
+        return NULL;
+    }
+    /** ~~~~~~~~~~~~~ */
+    function _tilefaceout( $opts = [] ){
+        global $resourcetable;
+        $out  = NULL;
+        $type = isset( $opts['type'] ) ? $opts['type'] : NULL;
+        if( ! is_NULL( $type ) ){
+            if( isset( $resourcetable["{$type}"]['disp_arr'] ) ){
+                if( is_array( $resourcetable["{$type}"]['disp_arr'] ) ){
+                    $out .= '<span class="tile_face_out">';
+                    foreach( $resourcetable["{$type}"]['disp_arr'] as $uni ){
+                        $out .= '<span class="clear">';
+                        foreach( $uni as $u ){
+                            $out .= mb_chr( $u, 'UTF-8' );
+                        }
+                        $out .= '</span>';
+                    }
+                    $out .= '</span>';
+                }
+            }
+        }
+        return $out;
+    }
     /** Return a visualization of the water tile's fish status ~~~~~~~~~~~~~
      *  @since va2.3
      */
@@ -1317,6 +1316,7 @@ functions:{
      *  @since va2
      */
     function _tileupdate( $opts = [] ){
+        $nomob = [ 'playerproperty' ];
         if( isset( $opts['coords'] ) ){
             $coords = explode( '/', $opts['coords'] );
             $opts['x'] = $coords[0];
@@ -1329,7 +1329,8 @@ functions:{
                 'disp'    => $opts['type'],
                 'born'    => time(),
                 'offdisp' => 'powerless',
-                'fish'    => $fishstock
+                'fish'    => $fishstock,
+                'mob'     => in_array( $opts['type'], $nomob ) ? false : ''
             ];
         }
         return NULL;
@@ -1515,7 +1516,7 @@ GET:{
                                     + round( $_SESSION['attributes']['agility'] / 100 );
                             }
                             /** Initialize a tef to keep health from immediately healing player */
-                            $_SESSION['combat']['last'] = time();
+                            $_SESSION['timer']['last_action'] = time();
                             unset( $_SESSION['temporary_airborne'] );
                         }
                     }
@@ -1584,10 +1585,11 @@ GET:{
         if( isset( $_SESSION['swap'] ) AND $k[0] != 'swap' ){
             unset( $_SESSION['swap'] );
         }
-        $playerposition = $_SESSION['playerposition'];
-        $ppc            = explode( '/', $playerposition );
-        $ppcx           = (int)$ppc[0];
-        $ppcy           = (int)$ppc[1];   
+        $playerposition  = $_SESSION['playerposition'];
+        $ppc             = explode( '/', $playerposition );
+        $ppcx            = (int)$ppc[0];
+        $ppcy            = (int)$ppc[1];
+        $since_last_move = time() - $_SESSION['timer']['last_move'];
         if( ! empty( $_GET ) ){
             if( $k[0] == 'togglemap' ){
                 $_SESSION['map_display'] = $_SESSION['map_display'] !== false ? (bool)false : (bool)true;
@@ -1596,27 +1598,6 @@ GET:{
             elseif( $k[0] == 'ui' ){
                 $_SESSION['show_ui'] = $_SESSION['show_ui'] !== false ? (bool)false : (bool)true;
                 header( 'Location: ./?x' );
-            }
-            elseif( $k[0] == 'cyclecode' ){
-                if( isset( $_SESSION['examining'] ) ){
-                    if( isset( $_SESSION['unlocked']["{$_SESSION['examining']}"] ) ){
-                        $position = (int)$v;
-                        if( isset( $_SESSION['unlocked']["{$_SESSION['examining']}"][$v] ) ){
-                            $curcode = $_SESSION['unlocked']["{$_SESSION['examining']}"][$v];
-                            if( $curcode < 9 )
-                                $_SESSION['unlocked']["{$_SESSION['examining']}"][$v] = $curcode + 1;
-                            if( $curcode == 9 )
-                                $_SESSION['unlocked']["{$_SESSION['examining']}"][$v] = 0;
-                        }
-                    }
-                }
-                header( 'Location: ./' );
-            }
-            elseif( $k[0] == 'examine' ){
-                if( isset( $examine["{$v}"] ) ){
-                    $_SESSION['examining'] = $v;
-                }
-                header( 'Location: ./' );
             }
             /** Toggle Resources display (in UI) */
             elseif( $k[0] == 'resources' ){
@@ -1629,9 +1610,8 @@ GET:{
                 }
                 header( 'Location: ./' );
             }
-            /** movement
+            /** movement ~~~~~~~~~~~~~
              *  @since version alpha
-             *  @since va2
              */
             elseif( $k[0] == 'playerright' ){
                 if( $ppcx == $xmax ){
@@ -1643,38 +1623,40 @@ GET:{
                     $right = ( $ppcx + 1 ) . '/' . $ppcy;
                     if( isset( $_SESSION['coords']["{$right}"]["{$disp}"] ) ){
                         $move = true;
+                        /** mob _should be an array, otherwise it's nothing (but notably nothing if it's boolean)
+                         *  @since va2.2
+                         *     - updated from ['decay'] as mob factor to actual mob arrays
+                         *  @since va2.4
+                         *     - mob impedence/appearance only at/after game_step 5
+                         */
+                        if( $_SESSION['game_step'] >= 5 ){
+                            if( isset( $_SESSION['coords']["{$right}"]['mob'] ) AND ! is_bool( $_SESSION['coords']["{$right}"]['mob'] ) ){ $move = false; }
+                        }
                         if( $move !== false ){
-                            if( $playerwesttype == 'air' OR $playerwesttype == 'open' OR $playerwesttype == 'ladder' ){
-
-                            }
-                            /** swim skill equates to water traversal
-                             *  @since version alpha
-                             */                             
-                            elseif( $playereasttype == 'water' ){
+                            /** swim skill equates to water traversal */                             
+                            if( $playereasttype == 'water' ){
                                 if( isset( $resourcetable["{$playereast}"]['swim'] ) ){
                                     if( $resourcetable["{$playereast}"]['swim'] > $_SESSION['skills']['swimming'] ){
                                         $move = false;
                                     }
                                 }
                             }
-                            else{ $move = false; }
-                        }
-                        /** mob _should be an array, otherwise it's nothing (but notably nothing if it's boolean)
-                         *  @since va2.2
-                         *     - updated from ['decay'] as mob factor to actual mob arrays
-                         */
-                        if( isset( $_SESSION['coords']["{$right}"]['mob'] ) AND ! is_bool( $_SESSION['coords']["{$right}"]['mob'] ) ){ $move = false; }
-                        else { $move = true; }
-                        if( $move !== false ){
-                            if( isset( $_SESSION['examining'] ) ){
-                                unset($_SESSION['examining']);
+                            /** cannot move through walls */
+                            if( $playereasttype == 'wall' ){
+                                $move = false;
                             }
+                        }
+                        if( $since_last_move < $seconds_to_next_move ){
+                            $move = false;
+                        }
+                        if( $move !== false ){
                             _attrup( [ 'attr' => 'stamina' ] );
                             $_SESSION['steps'] = $_SESSION['steps'] + 1;
                             if( $_SESSION['combat']['currently'] !== true ){
                                 $_SESSION['combat']['steps_since_last'] = $_SESSION['combat']['steps_since_last'] + 1;
                             }
                             $_SESSION['playerposition'] = $right;
+                            $_SESSION['timer']['last_move'] = time();
                         }
                     }
                 }
@@ -1696,30 +1678,29 @@ GET:{
                     $left = ($ppcx-1).'/'.$ppcy;
                     if( isset( $_SESSION['coords']["{$left}"]["{$disp}"] ) ){
                         $move = true;
+                        if( $_SESSION['game_step'] >= 5 ){
+                            if( isset( $_SESSION['coords']["{$left}"]['mob'] ) AND ! is_bool( $_SESSION['coords']["{$left}"]['mob'] ) ){ $move = false; }
+                        }
                         if( $move !== false ){
-                            if( $playerwesttype == 'air' OR $playerwesttype == 'open' OR $playerwesttype == 'ladder' ){
-
-                            }
                             /** swim skill equates to water traversal
                              *  @since va2:
                              */                             
-                            elseif( $playerwesttype == 'water' ){
+                            if( $playerwesttype == 'water' ){
                                 if( isset( $resourcetable["{$playerwest}"]['swim'] ) ){
                                     if( $resourcetable["{$playerwest}"]['swim'] > $_SESSION['skills']['swimming'] ){
                                         $move = false;
                                     }
                                 }
                             }
-                            else{
+                            /** cannot move through walls */
+                            if( $playereasttype == 'wall' ){
                                 $move = false;
                             }
                         }
-                        if( isset( $_SESSION['coords']["{$left}"]['mob'] ) AND ! is_bool( $_SESSION['coords']["{$left}"]['mob'] ) ){ $move = false; }
-                        else { $move = true; }
+                        if( $since_last_move < $seconds_to_next_move ){
+                            $move = false;
+                        }
                         if( $move !== false ){
-                            if( isset( $_SESSION['examining'] ) ){
-                                unset($_SESSION['examining']);
-                            }
                             _attrup( [ 'attr' => 'stamina' ] );
                             $_SESSION['steps'] = $_SESSION['steps'] + 1;
                             if( $_SESSION['combat']['currently'] !== false ){
@@ -1729,6 +1710,7 @@ GET:{
                                 $_SESSION['combat']['steps_since_last'] = $_SESSION['combat']['steps_since_last'] + 1;
                             }
                             $_SESSION['playerposition'] = $left;
+                            $_SESSION['timer']['last_move'] = time();
                         }
                     }
                 }
@@ -1739,31 +1721,30 @@ GET:{
                     $up = $ppcx.'/'.$ppcy-1;
                     if( isset( $_SESSION['coords']["{$up}"]["{$disp}"] ) ){
                         $move = true;
+                        if( $_SESSION['game_step'] >= 5 ){
+                            if( isset( $_SESSION['coords']["{$up}"]['mob'] ) AND ! is_bool( $_SESSION['coords']["{$up}"]['mob'] ) ){ $move = false; }
+                            else { $move = true; }
+                        }
                         if( $move !== false ){
-                            if( $playernorthtype == 'air' OR $playernorthtype == 'open' OR $playernorthtype == 'ladder' ){
-
-                            }
                             /** swim skill equates to water traversal
                              *  @since va2:
                              */                             
-                            elseif( $playernorthtype == 'water' ){
+                            if( $playernorthtype == 'water' ){
                                 if( isset( $resourcetable["{$playernorth}"]['swim'] ) ){
                                     if( $resourcetable["{$playernorth}"]['swim'] > $_SESSION['skills']['swimming'] ){
                                         $move = false;
                                     }
                                 }
                             }
-
-                            else{
+                            /** cannot move through walls */
+                            if( $playereasttype == 'wall' ){
                                 $move = false;
                             }
                         }
-                        if( isset( $_SESSION['coords']["{$up}"]['mob'] ) AND ! is_bool( $_SESSION['coords']["{$up}"]['mob'] ) ){ $move = false; }
-                        else { $move = true; }
+                        if( $since_last_move < $seconds_to_next_move ){
+                            $move = false;
+                        }
                         if( $move !== false ){
-                            if( isset( $_SESSION['examining'] ) ){
-                                unset($_SESSION['examining']);
-                            }
                             _attrup( [ 'attr' => 'stamina' ] );
                             $_SESSION['steps'] = $_SESSION['steps'] + 1;
                             if( $_SESSION['combat']['currently'] !== false ){
@@ -1773,6 +1754,7 @@ GET:{
                                 $_SESSION['combat']['steps_since_last'] = $_SESSION['combat']['steps_since_last'] + 1;
                             }
                             $_SESSION['playerposition'] = $up;
+                            $_SESSION['timer']['last_move'] = time();
                         }
                     }
                 }
@@ -1784,10 +1766,8 @@ GET:{
                     unset( $_SESSION['coords'] );
                     $_SESSION['playerposition'] = "{$player['x']}/4";
                     $_SESSION['temp'];
-                    
                     $areascore = $_SESSION['score_area'] > 0 ? $_SESSION['score_area'] : 0;
                     $availscore = $_SESSION['score_avail'] > 0 ? $_SESSION['score_avail'] : 0;
-                    
                     $_SESSION['score_total'] = $areascore + $availscore;
                     $_SESSION['score_area']  = 0;
                     $_SESSION['area'] = $_SESSION['area'] + 1;
@@ -1798,30 +1778,30 @@ GET:{
                     $down = $ppcx.'/'.$ppcy+1;
                     if( isset( $_SESSION['coords']["{$down}"]["{$disp}"] ) ){
                         $move = true;
+                        if( $_SESSION['game_step'] >= 5 ){
+                            if( isset( $_SESSION['coords']["{$down}"]['mob'] ) AND ! is_bool( $_SESSION['coords']["{$down}"]['mob'] ) ){ $move = false; }
+                            else { $move = true; }
+                        }
                         if( $move !== false ){
-                            if( $playersouthtype == 'air' OR $playersouthtype == 'open' OR $playersouthtype == 'ladder' ){
-
-                            }
                             /** swim skill equates to water traversal
                              *  @since va2:
                              */                             
-                            elseif( $playersouthtype == 'water' ){
+                            if( $playersouthtype == 'water' ){
                                 if( isset( $resourcetable["{$playersouth}"]['swim'] ) ){
                                     if( $resourcetable["{$playersouth}"]['swim'] > $_SESSION['skills']['swimming'] ){
                                         $move = false;
                                     }
                                 }
                             }
-                            else{
+                            /** cannot move through walls */
+                            if( $playereasttype == 'wall' ){
                                 $move = false;
                             }
                         }
-                        if( isset( $_SESSION['coords']["{$down}"]['mob'] ) AND ! is_bool( $_SESSION['coords']["{$down}"]['mob'] ) ){ $move = false; }
-                        else { $move = true; }
+                        if( $since_last_move < $seconds_to_next_move ){
+                            $move = false;
+                        }
                         if( $move !== false ){
-                            if( isset( $_SESSION['examining'] ) ){
-                                unset($_SESSION['examining']);
-                            }
                             _attrup( [ 'attr' => 'stamina' ] );
                             $_SESSION['steps'] = $_SESSION['steps'] + 1;
                             if( $_SESSION['combat']['currently'] !== false ){
@@ -1831,11 +1811,13 @@ GET:{
                                 $_SESSION['combat']['steps_since_last'] = $_SESSION['combat']['steps_since_last'] + 1;
                             }
                             $_SESSION['playerposition'] = $down;
+                            $_SESSION['timer']['last_move'] = time();
                         }
                     }
                 }
                 header( 'Location: ./' );
             }
+            /** ~~~~~~~~~~~~~ */
             elseif( $k[0] == 'resource' ){
                 if( isset( $k[1] ) ){
                     if( isset( $resourcetable ) ){
@@ -1940,7 +1922,7 @@ GET:{
                         _attrup( [ 'attr' => 'agility' ] );
                         header( 'Location:./?jump' );
                     }
-                }                    
+                }
             }
             elseif( $k[0] == 'tunnel' ){
                 if( isset( $k[1] ) AND isset( $k[2] ) ){
@@ -2111,7 +2093,8 @@ GET:{
                                             else {
                                             }
                                             $_SESSION['health'] = $_SESSION['health'] - $m_melee_damage;
-                                            $_SESSION['combat']['last'] = time();
+                                            $_SESSION['timer']['last_combat'] = time();
+                                            $_SESSION['timer']['last_action'] = time();
                                         }
                                     }
                                 }
@@ -2180,6 +2163,8 @@ session:{
     $disp = $_SESSION['worldpower'] !== false ? 'disp' : 'offdisp';
     /** Setup the initial $_SESSION array ~~~~~~~~~~~~~ */
     if( ! isset( $_SESSION['started'] ) ){
+        $newx         = mt_rand( 31, ( $xmax - 2 ) );
+        $newy         = mt_rand( 31, ( $ymax - 2 ) );
         $random_build = mt_rand( 0, 9 );
         $_SESSION = [
             'acquire' => [
@@ -2206,7 +2191,6 @@ session:{
             ],
             'combat' => [
                 'currently'        => false,
-                'last'             => time(),
                 'log'              => [],
                 'lost'             => 0,
                 'ran'              => 0,
@@ -2219,24 +2203,27 @@ session:{
             'dead'           => false,
             'died'           => 0,
             'equipment'      => [
-                'head'       => '',
-                'chest'      => '',
-                'legs'       => '',
-                'feet'       => '',
-                'arms'       => '',
-                'hands'      => '',
-                'hand_left'  => '',
-                'hand_right' => '',
-                'accessory_a'=> '',
-                'accessory_b'=> ''
+                'head'       => 'nothing',
+                'chest'      => 'nothing',
+                'legs'       => 'nothing',
+                'feet'       => 'nothing',
+                'arms'       => 'nothing',
+                'hands'      => 'nothing',
+                'hand_left'  => 'nothing',
+                'hand_right' => 'nothing',
+                'accessory_a'=> 'nothing',
+                'accessory_b'=> 'nothing',
+                'relic_a'    => 'nothing',
+                'relic_b'    => 'nothing'
             ],
             'exp'            => 7632,
+            'game_step'      => 0,
             /** @since va2.3 randomize player positioning on start */
             'id'             => (int)time() . mt_rand( 0, 1024 ),
             'inventory'      => [],
             'lvl'            => 1,
             'map_display' => true,
-            'playerposition' => rand( 1, $xmax ) . '/' . rand( 4, $ymax ),
+            'playerposition' => "{$newx}/{$newy}",
             'rain_ended'     => time(),
             'resources'      => [],
             'score_area'     => 0,
@@ -2254,6 +2241,11 @@ session:{
             'started'           => time(),
             'steps'             => 0,
             'temp'              => 1,
+            'timer'             => [
+                'last_combat'   => time(),
+                'last_action'   => time(),
+                'last_move'     => time()
+            ],
             'totalfish'         => 0,
             'totalharvest'      => 0,
             'totalscavenge'     => 0,
@@ -2271,7 +2263,7 @@ session:{
     /** ~~~~~~~~~~~~~ */
     if( $_SESSION['combat']['currently'] !== true ){
         $stepssincelastcombat = $_SESSION['combat']['steps_since_last'];
-        $timesincelastcombat  = time() - $_SESSION['combat']['last'];
+        $timesincelastcombat  = time() - $_SESSION['timer']['last_combat'];
         if( $_SESSION['acquire']['encounters'] !== false ){
             if( $timesincelastcombat > 60 ){
                 if( _random( [ true => $stepssincelastcombat, false => ( 100 - $stepssincelastcombat ) ] ) !== false ){
@@ -2545,6 +2537,9 @@ session:{
                             _tileupdate( [ 'coords' => $_SESSION['currentcoord'], 'type' => $harv ] );
                         }
                     }
+                    if( $last_action < $seconds_to_next_action ){
+                        $canharv = false;
+                    }
                     if( $canharv !== false AND $_SESSION['acquire']['resources'] !== false ){
                         /** break increment not set
                          *
@@ -2608,6 +2603,7 @@ session:{
                                 $_SESSION['exp'] = $_SESSION['exp'] + $amt;
                                 $_SESSION['coords']["{$_SESSION['currentcoord']}"]["{$disp}"] = $harv;
                                 $_SESSION['coords']["{$_SESSION['currentcoord']}"]['break'] = 0;
+                                $_SESSION['timer']['last_action'] = time();
                                 if( isset( $resourcetable["{$check}"]['mine'] ) ){
                                     if( $_SESSION['acquire']['score'] !== false ){
                                         if( $_SESSION['coords']["{$k}"]['decay'] <= 0 ){
@@ -2721,38 +2717,40 @@ session:{
                     $west2       = isset( $_SESSION['coords']["{$xpp}/{$y}"]["{$disp}"] )       ? $_SESSION['coords']["{$xpp}/{$y}"]["{$disp}"]       : NULL;
                     $west3       = isset( $_SESSION['coords']["{$xppp}/{$y}"]["{$disp}"] )      ? $_SESSION['coords']["{$xppp}/{$y}"]["{$disp}"]      : NULL;
                     $west4       = isset( $_SESSION['coords']["{$xpppp}/{$y}"]["{$disp}"] )     ? $_SESSION['coords']["{$xpppp}/{$y}"]["{$disp}"]     : NULL;
-                    if( in_array( $north, $donotbuildover ) ){      $north      = NULL; }
-                    if( in_array( $north2, $donotbuildover ) ){     $north2     = NULL; }
-                    if( in_array( $north3, $donotbuildover ) ){     $north3     = NULL; }
-                    if( in_array( $north4, $donotbuildover ) ){     $north4     = NULL; }
-                    if( in_array( $northwest, $donotbuildover ) ){  $northwest  = NULL; }
-                    if( in_array( $northwest2, $donotbuildover ) ){ $northwest2 = NULL; }
-                    if( in_array( $northwest3, $donotbuildover ) ){ $northwest3 = NULL; }
-                    if( in_array( $northwest4, $donotbuildover ) ){ $northwest4 = NULL; }
-                    if( in_array( $northeast, $donotbuildover ) ){  $northeast  = NULL; }
-                    if( in_array( $northeast2, $donotbuildover ) ){ $northeast2 = NULL; }
-                    if( in_array( $northeast3, $donotbuildover ) ){ $northeast3 = NULL; }
-                    if( in_array( $northeast4, $donotbuildover ) ){ $northeast4 = NULL; }
-                    if( in_array( $south, $donotbuildover ) ){      $south      = NULL; }
-                    if( in_array( $south2, $donotbuildover ) ){     $south2     = NULL; }
-                    if( in_array( $south3, $donotbuildover ) ){     $south3     = NULL; }
-                    if( in_array( $south4, $donotbuildover ) ){     $south4     = NULL; }
-                    if( in_array( $southwest, $donotbuildover ) ){  $southwest  = NULL; }
-                    if( in_array( $southwest2, $donotbuildover ) ){ $southwest2 = NULL; }
-                    if( in_array( $southwest3, $donotbuildover ) ){ $southwest3 = NULL; }
-                    if( in_array( $southwest4, $donotbuildover ) ){ $southwest4 = NULL; }
-                    if( in_array( $southeast, $donotbuildover ) ){  $southeast  = NULL; }
-                    if( in_array( $southeast2, $donotbuildover ) ){ $southeast2 = NULL; }
-                    if( in_array( $southeast3, $donotbuildover ) ){ $southeast3 = NULL; }
-                    if( in_array( $southeast4, $donotbuildover ) ){ $southeast4 = NULL; }
-                    if( in_array( $east, $donotbuildover ) ){       $east       = NULL; }
-                    if( in_array( $east2, $donotbuildover ) ){      $east2      = NULL; }
-                    if( in_array( $east3, $donotbuildover ) ){      $east3      = NULL; }
-                    if( in_array( $east4, $donotbuildover ) ){      $east4      = NULL; }
-                    if( in_array( $west, $donotbuildover ) ){       $west       = NULL; }
-                    if( in_array( $west2, $donotbuildover ) ){      $west2      = NULL; }
-                    if( in_array( $west3, $donotbuildover ) ){      $west3      = NULL; }
-                    if( in_array( $west4, $donotbuildover ) ){      $west4      = NULL; }
+                    if( ! in_array( $ct, $donotbuildover ) ){
+                        if( in_array( $north, $donotbuildover ) ){      $north      = NULL; }
+                        if( in_array( $north2, $donotbuildover ) ){     $north2     = NULL; }
+                        if( in_array( $north3, $donotbuildover ) ){     $north3     = NULL; }
+                        if( in_array( $north4, $donotbuildover ) ){     $north4     = NULL; }
+                        if( in_array( $northwest, $donotbuildover ) ){  $northwest  = NULL; }
+                        if( in_array( $northwest2, $donotbuildover ) ){ $northwest2 = NULL; }
+                        if( in_array( $northwest3, $donotbuildover ) ){ $northwest3 = NULL; }
+                        if( in_array( $northwest4, $donotbuildover ) ){ $northwest4 = NULL; }
+                        if( in_array( $northeast, $donotbuildover ) ){  $northeast  = NULL; }
+                        if( in_array( $northeast2, $donotbuildover ) ){ $northeast2 = NULL; }
+                        if( in_array( $northeast3, $donotbuildover ) ){ $northeast3 = NULL; }
+                        if( in_array( $northeast4, $donotbuildover ) ){ $northeast4 = NULL; }
+                        if( in_array( $south, $donotbuildover ) ){      $south      = NULL; }
+                        if( in_array( $south2, $donotbuildover ) ){     $south2     = NULL; }
+                        if( in_array( $south3, $donotbuildover ) ){     $south3     = NULL; }
+                        if( in_array( $south4, $donotbuildover ) ){     $south4     = NULL; }
+                        if( in_array( $southwest, $donotbuildover ) ){  $southwest  = NULL; }
+                        if( in_array( $southwest2, $donotbuildover ) ){ $southwest2 = NULL; }
+                        if( in_array( $southwest3, $donotbuildover ) ){ $southwest3 = NULL; }
+                        if( in_array( $southwest4, $donotbuildover ) ){ $southwest4 = NULL; }
+                        if( in_array( $southeast, $donotbuildover ) ){  $southeast  = NULL; }
+                        if( in_array( $southeast2, $donotbuildover ) ){ $southeast2 = NULL; }
+                        if( in_array( $southeast3, $donotbuildover ) ){ $southeast3 = NULL; }
+                        if( in_array( $southeast4, $donotbuildover ) ){ $southeast4 = NULL; }
+                        if( in_array( $east, $donotbuildover ) ){       $east       = NULL; }
+                        if( in_array( $east2, $donotbuildover ) ){      $east2      = NULL; }
+                        if( in_array( $east3, $donotbuildover ) ){      $east3      = NULL; }
+                        if( in_array( $east4, $donotbuildover ) ){      $east4      = NULL; }
+                        if( in_array( $west, $donotbuildover ) ){       $west       = NULL; }
+                        if( in_array( $west2, $donotbuildover ) ){      $west2      = NULL; }
+                        if( in_array( $west3, $donotbuildover ) ){      $west3      = NULL; }
+                        if( in_array( $west4, $donotbuildover ) ){      $west4      = NULL; }
+                    }
                     $coordnorth     = !is_NULL( $north )     ? "{$x}/{$yp}"    : NULL;
                     $coordnorth2    = !is_NULL( $north2 )    ? "{$x}/{$ypp}"   : NULL;
                     $coordnorth3    = !is_NULL( $north3 )    ? "{$x}/{$yppp}"  : NULL;
@@ -2877,6 +2875,33 @@ session:{
                             }
                         }
                     }
+                    if( $_SESSION['game_step'] < .2 ){
+                        if( "{$x}/{$y}" == $_SESSION['playerposition'] ){
+                            _tileupdate( [ 'coords' => $coordnorth,     'type' => 'playerproperty' ] );
+                            _tileupdate( [ 'coords' => $coordnortheast, 'type' => 'playerproperty' ] );
+                            _tileupdate( [ 'coords' => $coordnorthwest, 'type' => 'playerproperty' ] );
+                            _tileupdate( [ 'coords' => $coordeast,      'type' => 'playerproperty' ] );
+                            _tileupdate( [ 'coords' => $coordsouth,     'type' => 'playerproperty' ] );
+                            _tileupdate( [ 'coords' => $coordsoutheast, 'type' => 'playerproperty' ] );
+                            _tileupdate( [ 'coords' => $coordsouthwest, 'type' => 'playerproperty' ] );
+                            _tileupdate( [ 'coords' => $coordwest,      'type' => 'playerproperty' ] );
+                            $ct = 'playerproperty';
+                            $_SESSION['game_step'] = $_SESSION['game_step'] + .1;
+                        }
+                    }
+                    if( $_SESSION['game_step'] >= .2 AND $_SESSION['game_step'] < .4 ){
+                        if( $ct == 'playerproperty' ){
+                            if( $north == 'playerproperty' ){
+                                if( $south == 'playerproperty' ){
+                                    if( $east == 'playerproperty' ){
+                                        if( $west == 'playerproperty' ){
+                                            $ct = 'home';
+                                        }
+                                    }
+                                }
+                            }                            
+                        }
+                    }
                     if( isset( $_SESSION['coords']["{$x}/{$y}"]["{$disp}"] ) ){
                         if( $ct == 'door' OR $ct == 'dooropen' OR $ct == 'doorlocked' OR $ct == 'doorunlocked'  ){
 
@@ -2895,7 +2920,8 @@ session:{
         if( mt_rand( 0, 1 ) == 1 ){
             $_SESSION['combat']['currently'] = false;
             $_SESSION['combat']['ran'] = $_SESSION['combat']['ran'] + 1;
-            $_SESSION['combat']['last'] = time();
+            $_SESSION['timer']['last_combat'] = time();
+            $_SESSION['timer']['last_action'] = time();
             $_SESSION['combat']['steps_since_last'] = 0;
         }
         header( 'Location: ./' );
@@ -2904,14 +2930,9 @@ session:{
         if( isset( $_SESSION['currentcoord'] ) ){
             unset( $_SESSION['currentcoord'] );
         }
-        if( isset( $_SESSION['examining'] ) ){
-            unset( $_SESSION['examining'] );
-        }
         header('Location:./');
     }
     if(isset($_GET['r'])){
-        if( isset( $_SESSION['examining'] ) )
-            unset( $_SESSION['examining'] );
         if(isset($_GET['rr'])){
             foreach($_SESSION as $k=>$v){
             if( $k == 'show_resources' ){}
@@ -4674,22 +4695,53 @@ scene:{
             $attributes    = NULL;
             $attributesarr = NULL;
             $attributes .= '<div class="attributes">';
-            $attributes .= "<span class='attribute' title='Level'><i>LVL</i><strong>{$_SESSION['lvl']}</strong></span>";
-            $attributes .= "<span class='attribute' title='Experience'><i>EXP</i><strong>{$_SESSION['exp']}</strong></span>";
-            if( isset( $_SESSION['attributes'] ) ){
-                foreach( $_SESSION['attributes'] as $k => $v ){
-                    $leveling = NULL;
-                    if( isset( $_SESSION['leveling']["{$k}"] ) ){
-                        $currentleveling = $_SESSION['leveling']["{$k}"];
-                        $leveling = "<span class='leveling'><span style='width:{$currentleveling}%;'></span></span>";
+                $attributes .= "<span class='attribute' title='Level'><i>LVL</i><strong>{$_SESSION['lvl']}</strong></span>";
+                $attributes .= "<span class='attribute' title='Experience'><i>EXP</i><strong>{$_SESSION['exp']}</strong></span>";
+                if( isset( $_SESSION['attributes'] ) ){
+                    foreach( $_SESSION['attributes'] as $k => $v ){
+                        $leveling = NULL;
+                        if( isset( $_SESSION['leveling']["{$k}"] ) ){
+                            $currentleveling = $_SESSION['leveling']["{$k}"];
+                            $leveling = "<span class='leveling'><span style='width:{$currentleveling}%;'></span></span>";
+                        }
+                        $attributesarr .= "<span class='attribute' title='{$k}'><i>{$k}</i><strong>{$v}</strong>{$leveling}</span>";
                     }
-                    $attributesarr .= "<span class='attribute' title='{$k}'><i>{$k}</i><strong>{$v}</strong>{$leveling}</span>";
                 }
-            }
             $attributes .= "{$attributesarr}</div>";
         }
-        toolbelt:{
+        equipment:{
+            $equipment     = NULL;
+            $eqhead        = $_SESSION['equipment']['head'];
+            $eqchest       = $_SESSION['equipment']['chest'];
+            $eqlegs        = $_SESSION['equipment']['legs'];
+            $eqfeet        = $_SESSION['equipment']['feet'];
+            $eqarms        = $_SESSION['equipment']['arms'];
+            $eqhands       = $_SESSION['equipment']['hands'];
+            $eqhand_left   = $_SESSION['equipment']['hand_left'];
+            $eqhand_right  = $_SESSION['equipment']['hand_right'];
+            $eqaccessory_a = $_SESSION['equipment']['accessory_a'];
+            $eqaccessory_b = $_SESSION['equipment']['accessory_b'];
+            $eqrelic_a     = $_SESSION['equipment']['relic_a'];
+            $eqrelic_b     = $_SESSION['equipment']['relic_b'];
+            $equipment    .= '<div class="equipment">';
+            $equipment    .= "<span class='hand_left'><u>{$eqhand_left}</u></span>";
+            $equipment    .= "<span class='hand_right'><u>{$eqhand_right}</u></span>";
+            $equipment    .= "<span class='arms'><u>{$eqarms}</u></span>";
+            $equipment    .= "<span class='chest'><u>{$eqchest}</u></span>";
+            $equipment    .= "<span class='feet'><u>{$eqfeet}</u></span>";
+            $equipment    .= "<span class='hands'><u>{$eqhands}</u></span>";
+            $equipment    .= "<span class='head'><u>{$eqhead}</u></span>";
+            $equipment    .= "<span class='legs'><u>{$eqlegs}</u></span>";
+            $equipment    .= '<span class="trinkets">';
+            $equipment    .= "<span class='acc_a'><u>{$eqaccessory_a}</u></span>";
+            $equipment    .= "<span class='acc_b'><u>{$eqaccessory_b}</u></span>";
+            $equipment    .= "<span class='rel_a'><u>{$eqrelic_a}</u></span>";
+            $equipment    .= "<span class='rel_b'><u>{$eqrelic_b}</u></span>";
+            $equipment    .= '</span>';
+            $equipment    .= '</div>';
             
+        }
+        toolbelt:{            
             $toolbelt = NULL;
             $tools = [
                 'destroy'   => 'destroy',
@@ -4805,7 +4857,7 @@ scene:{
         scene:{
             $scene = NULL;
             if( $_SESSION['show_ui'] !== true ){
-                $attributes = $hygrometer = $skills = NULL;
+                $attributes = $equipment = $hygrometer = $skills = NULL;
                 $seasonb .= ' noui';
             }
             if( $_SESSION['show_resources'] !== true ){
@@ -4829,6 +4881,7 @@ scene:{
                 $resourcesout.
                 $skills.
                 $attributes.
+                $equipment.
                 $toolbelt.
             '</div>';
         }
@@ -4850,17 +4903,12 @@ templating:{
         $south2 = "{$coords[0]}/{$south2}";
     }
     $totalwatersources = 0;
-    $totalharvest  = 0;
-    $totalscavenge  = 0;
-    $totalfish     = 0;
-    $rainingcss = 'no_rain';
+    $totalharvest      = 0;
+    $totalscavenge     = 0;
+    $totalfish         = 0;
+    $rainingcss        = 'no_rain';
     if( isset( $_SESSION['rain_began'] ) ){
         $rainingcss = 'rain';
-    }
-    if( isset( $_SESSION['examining'] ) ){
-        if( $_SESSION['examining'] == 'computera' ){
-            $rainingcss .= ' terminal';
-        }
     }
     if( $_SESSION['map_display'] !== true ){
         $rainingcss = 'nomap';
@@ -4870,14 +4918,6 @@ templating:{
     if( isset( $_SESSION['currentcoord'] ) ){
         $exit = '<a href="./?x">x _ x</a>';
     }
-    $header .= 
-        '<!DOCTYPE HTML>'.
-            '<head>'.
-                "<title>{$title}</title>".
-                '<meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />'.
-                '<link rel="stylesheet" href="./style.css" />'.
-            '</head>';
-
     $body .= '<body>';
     $template .= "<main class='{$rainingcss}'>";
     $template .= isset( $_GET['r'] ) ? '<div class="reset"><a href="./?r&rr">yes</a><a href="./">no</a></div>' : '';
@@ -4906,7 +4946,9 @@ templating:{
                     $x               = isset( $coords[0] ) ? (int)$coords[0] : 1;
                     $y               = isset( $coords[1] ) ? (int)$coords[1] : 1;
                     $z               = isset( $coords[1] ) ? (int)$coords[1] : 1;
-                    $mapoutput .= $x == 1 ? "<div class='y'><span class='y'>{$y}</span>" : '';
+                    if( in_array( $y, $viewabley ) ){
+                        $mapoutput .= $x == 1 ? "<div class='y'><span class='y'>{$y}</span>" : '';
+                    }
                     /** Water sources for _hygrometer ~~~~~~~~~~~~~
                      */
                     if( $tdisp == 'water'   ){ $totalwatersources = (int)$totalwatersources + (int).001; }
@@ -4921,12 +4963,12 @@ templating:{
                     $title = $tdisp;
                     /** *-able status ~~~~~~~~~~~~~
                      */
-                    if( isset( $player ) ){                                     # Near to the player
+                    if( isset( $player ) ){ # Near to the player
                         if( in_array( $k, $player['nearby'] ) ){
                             $url = "./?/coord/{$k}";
                         }
                     }
-                    if( isset( $_GET['destroy'] ) ){                            # Destroy
+                    if( isset( $_GET['destroy'] ) ){ # Destroy
                         $classadditional .= ' destructable';
                         $url = "./?/destroy/{$k}";
                     }
@@ -4938,18 +4980,18 @@ templating:{
                             $url = "./?/swap/{$_SESSION['swap']}/{$k}";
                         }                            
                     }
-                    if( isset( $_GET['tunnel'] ) ){                             # Reinforce
+                    if( isset( $_GET['tunnel'] ) ){ # Reinforce
                         $classadditional .= ' reinforceable';
                         $url = "./?/tunnel/{$k}";
                     }
-                    if( isset( $_GET['ladder'] ) ){                             # Ladder
+                    if( isset( $_GET['ladder'] ) ){ # Ladder
                         $classadditional .= ' ladderable';
                         $url = "./?/ladder/{$k}";
                     }
-                    if( isset( $_GET['minicoord'] ) ){                          # Mine
+                    if( isset( $_GET['minicoord'] ) ){ # Mine
                         $url = "./?/minicoord/{$k}";
                     }
-                    if( isset( $_GET['jump'] ) ){                               # Jump
+                    if( isset( $_GET['jump'] ) ){ # Jump
                         $classadditional .= ' reachable';
                         (int)$xdif = (int)$x > (int)$player['x'] ? (int)$x - (int)$player['x'] : (int)$player['x'] - (int)$x;
                         (int)$ydif = (int)$y > (int)$player['y'] ? (int)$y - (int)$player['y'] : (int)$player['y'] - (int)$y;
@@ -4963,7 +5005,7 @@ templating:{
                             $url = "./?/jump/{$k}";
                         }
                     }
-                    if( isset( $resourcetable["{$tdisp}"]['type'] ) ){          # type 'floor', 'open'
+                    if( isset( $resourcetable["{$tdisp}"]['type'] ) ){ # type 'floor', 'open'
                         if( $resourcetable["{$tdisp}"]['type'] == 'floor' ){
                             $classadditional .= ' traversable';
                         }
@@ -4971,7 +5013,7 @@ templating:{
                             $classadditional .= ' open';
                         }
                     }
-                    if( isset( $resourcetable ) ){                              # Can be actively mined by player
+                    if( isset( $resourcetable ) ){ # Can be actively mined by player
                         if( isset( $resourcetable["{$tdisp}"] ) ){
                             if( isset( $resourcetable["{$tdisp}"]['disp'] ) ){
                                 $title = $resourcetable["{$tdisp}"]['disp'];
@@ -4987,13 +5029,13 @@ templating:{
                             }
                         }
                     }
-                    if( $tdisp == 'channel' ){                                  # Fishing
+                    if( $tdisp == 'channel' ){ # Fishing
                         $totalfish = $totalfish + 1;
                         if( $v['fish'] > 0 ){
                             $classadditional .= ' harvestable';
                         }
                     }
-                    if( $tdisp == 'shallow' ){                                  # Scavenge
+                    if( $tdisp == 'shallow' ){ # Scavenge
                         $totalscavenge = $totalscavenge + 1;
                         if( $v['fish'] > 0 ){
                             $classadditional .= ' harvestable';
@@ -5048,20 +5090,22 @@ templating:{
                                                 }
                                             }
                                             if( $_SESSION['dead'] !== true ){
-                                                if( isset( $_SESSION['coords']["{$k}"]['mob'] ) ){
-                                                    if( is_array( $_SESSION['coords']["{$k}"]['mob'] ) ){
-                                                        $mob = $_SESSION['coords']["{$k}"]['mob'];
-                                                        $m_action               = $mob['action'];
-                                                        $m_health               = $mob['health'];
-                                                        if( $m_health <= 0 ){
-                                                            unset( $_SESSION['coords']["{$k}"]['mob'] );
+                                                if( $_SESSION['game_step'] >= 5 ){
+                                                    if( isset( $_SESSION['coords']["{$k}"]['mob'] ) ){
+                                                        if( is_array( $_SESSION['coords']["{$k}"]['mob'] ) ){
+                                                            $mob = $_SESSION['coords']["{$k}"]['mob'];
+                                                            $m_action               = $mob['action'];
+                                                            $m_health               = $mob['health'];
+                                                            if( $m_health <= 0 ){
+                                                                unset( $_SESSION['coords']["{$k}"]['mob'] );
+                                                            }
+                                                            if( is_bool( $mob ) ){
+                                                                unset( $_SESSION['coords']["{$k}"]['mob'] );
+                                                            }
+                                                            $m_exp  = $mob['exp'];
+                                                            $extra .= '<span class="popup mob"><strong>';
+                                                            $extra .= $m_health . '</strong></span>';
                                                         }
-                                                        if( is_bool( $mob ) ){
-                                                            unset( $_SESSION['coords']["{$k}"]['mob'] );
-                                                        }
-                                                        $m_exp                  = $mob['exp'];
-                                                        $extra .= '<span class="popup mob"><strong>';
-                                                        $extra .= $m_health . '</strong></span>';
                                                     }
                                                 }
                                             }
@@ -5072,8 +5116,6 @@ templating:{
                         }
                     }
                     if( $view !== false ){
-                        
-
                         if( isset( $_SESSION['currentresource'] ) ){
                             if( isset( $resourcetable["{$_SESSION['currentresource']}"] ) ){
                                 foreach( $resourcetable["{$_SESSION['currentresource']}"]['case'] as $resk => $resv ){
@@ -5095,10 +5137,6 @@ templating:{
                             }
                         }
                         $titleout = " title='{$titleout}'";
-
-
-
-
                         $tileclass = NULL;
                         $currenttile = NULL;
                         if( isset( $_SESSION['playerposition'] ) ){
@@ -5109,13 +5147,13 @@ templating:{
                             }
                         }
                         if( $tdisp == 'nothing' ){
-                            $tiletile = " id='{$x}/{$y}' class='box nothing'";
+                            $tiletile = " class='box nothing'";
                         }
                         elseif( $tdisp == 'nothingbarrier' ){
-                            $tiletile = " id='{$x}/{$y}' class='box nothingbarrier'";
+                            $tiletile = " class='box nothingbarrier'";
                         }
                         else{
-                            $tiletile = " style='z-index:{$z};' id='{$x}/{$y}' class='box'{$titleout}";
+                            $tiletile = " class='box'{$titleout}";
                         }
                         $dispthis = false;
                         if( in_array( $x, $viewablex ) ){
@@ -5150,26 +5188,32 @@ templating:{
                         if( $dispthis !== false ){
                             $mapoutput .= $extra;
                         }
-
                         $mapoutput .= _tilemovementkeys( [ 'current' => $currenttile, 'display' => $dispthis ] );
                         $mapoutput .= _tilefishstatus( [ 'display' => $tdisp, 'display_this' => $dispthis, 'fish' => $fish ] );
                         $mapoutput .= _tilebreakstatus( [ 'coords' => $k, 'display' => $tdisp, 'display_this' => $dispthis ] );
                         $mapoutput .= _tileswimrequirements( [ 'display' => $tdisp, 'display_this' => $dispthis ] );
-
                         if( ! is_NULL( $url ) ){        
                             if( $dispthis !== false ){
+                                $mapoutput .= _tilefaceout( [ 'type' => $tdisp ] );
                                 $mapoutput .= '</a>';
                             }
                         }
                         else {
                             if( $dispthis !== false ){
+                                $mapoutput .= _tilefaceout( [ 'type' => $tdisp ] );
                                 $mapoutput .= '</span>';
                             }
                         }
                         if( $dispthis !== false ){
+                            
                             $mapoutput .= '</span>';
                         }
-                        $mapoutput .= $x == $xmax ? '</div>' : '';
+                        if( in_array( $y, $viewabley ) ){
+                            $mapoutput .= $x == $xmax ? '</div>' : '';
+                            if( in_array( $x, $viewablex ) ){
+                                $tile_disp_arr[] = $tdisp;
+                            }
+                        }
                     }
                     $tilec++;
                     if( isset( $resourcetable["{$v['disp']}"]['mine'] ) ){
@@ -5178,12 +5222,6 @@ templating:{
                                 $score = $score + ( $resourcetable["{$v['disp']}"]['mine'] / 100 );
                             }
                         }
-                    }
-                    if( $v['disp'] == 'nothingbarrier' ){
-                        $score = $score - 1;
-                    }
-                    if( $v['disp'] == 'tunnel' ){
-                        $score = $score - 1;
                     }
                 }
             }
@@ -5302,14 +5340,14 @@ templating:{
                     }
                     $additional_action_regen = $stamina + $restful;
                     # Trinkets, relics, etc?
-                    if( time() - $_SESSION['combat']['last'] > 2 ){
-                        $_SESSION['action'] = $_SESSION['action'] + time() - $_SESSION['combat']['last'] + $additional_action_regen;
+                    if( time() - $_SESSION['timer']['last_action'] > 2 ){
+                        $_SESSION['action'] = $_SESSION['action'] + time() - $_SESSION['timer']['last_action'] + $additional_action_regen;
                     }
                 }
             }
             if( $_SESSION['health'] < $health_available ){
-                if( time() - $_SESSION['combat']['last'] > 11 ){
-                    $_SESSION['health'] = $_SESSION['health'] + time() - $_SESSION['combat']['last'];
+                if( time() - $_SESSION['timer']['last_combat'] > 6 ){
+                    $_SESSION['health'] = $_SESSION['health'] + time() - $_SESSION['timer']['last_combat'];
                 }
             }
             if( $_SESSION['health'] > $health_available ){
@@ -5336,7 +5374,7 @@ templating:{
             }
             if( $health_available > 0 ){
                 $tef = NULL;
-                if( time() - $_SESSION['combat']['last'] < 11 ){
+                if( time() - $_SESSION['timer']['last_combat'] < 7 ){
                     $tef = ' tef';
                 }
                 $mapoutput .= "<div class='combat{$_SESSION['combat']['currently']}{$tef} health_display'><span style='width:{$health_total}%;'></span>{$health_detriment}<strong>{$_SESSION['health']} / {$health_available}</strong></div>";
@@ -5377,10 +5415,18 @@ templating:{
         if( $_SESSION['acquire']['resources'] !== false ){
             $resourceslink = '<a href="./?resources">'.$resourcesdisplay.'</a>';
         }
-        $templateb .=  '<footer><p><a href="./?togglemap">'.$mapdisplay.'</a>'.$resourceslink.'<a href="./?ui">'.$uidisplay.'</a><p><code><a href="https://github.com/maddicakes/regular-game-engine">va2.3</a></code> // <a href="./?r">reset</a></p></footer>';
+        $templateb .=  '<footer><p><a href="./?togglemap">'.$mapdisplay.'</a>'.$resourceslink.'<a href="./?ui">'.$uidisplay.'</a><p><code><a href="https://github.com/maddicakes/regular-game-engine">'.$version.'</a></code> // <a href="./?r">reset</a></p></footer>';
     }
     $templateb.= '</main>';
     $templateb.='</body></html>';
+    $header .= 
+        '<!DOCTYPE HTML>'.
+            '<head>'.
+                "<title>{$title}</title>".
+                '<meta name="viewport" content="initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />'.
+                '<link rel="stylesheet" href="./style.css" />';
+    $header .= _tileclassinline( $tile_disp_arr );
+    $header .= '</head>';    
     if( $_SESSION['dead'] !== true ){
         if( $_SESSION['map_display'] !== false ){
             if( $_SESSION['combat']['currently'] !== true ){
