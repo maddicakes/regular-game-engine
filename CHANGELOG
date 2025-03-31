@@ -3,6 +3,10 @@
     ~~~~~~~~~~~~~
     @since va2.6
 
+    va2.6.1
+        (FIX) HOTFIXes   hanging unitialized $_SESSION variable(s)
+        (CHG) Area progression removed (y/64->new area), reworking for va2.7
+
     va2.6
         (FIX) VISUAL BUG (#va2600000mt) Remove traversable tile class when tile is harvestable
         (FIX) VISUAL BUG (#va2600001mt) Combination class for selected resource ['case'] -> ['case']['combine']
