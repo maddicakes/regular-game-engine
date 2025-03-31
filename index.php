@@ -180,6 +180,7 @@
                 'unhand',
                 'unplug',
                 'view',
+                'wall',
                 'x'
             ];
             /** ~~~~~~~~~~~~~ */
@@ -280,6 +281,14 @@
                     'alcove' => [
                         'disp' => 'alcove',
                         'type' => 'water'
+                    ],
+                    'wall' => [
+                        'css'  => [
+                            'background-color' => '#000'
+                        ],
+                        'disp' => '|',
+                        'dnh'  => 1,
+                        'type' => 'wall'
                     ],
                     'basement' => [
                         'case'  => [],
@@ -2995,7 +3004,8 @@
                         'jump'      => 'jump',
                         'minicoord' => 'mine',
                         'tunnel'    => 'reinforce',
-                        'swap'      => 'swap'
+                        'swap'      => 'swap',
+                        'wall'      => 'wall'
                     ];
                     $toolbelt .= '<div class="toolbelt">';
                     foreach( $tools as $k => $v ){
@@ -4073,7 +4083,7 @@
                                             }
                                         }
                                         /** cannot move through walls */
-                                        if( $playereasttype == 'wall' ){
+                                        if( $playerwestttype == 'wall' ){
                                             $move = false;
                                         }
                                     }
@@ -4121,7 +4131,7 @@
                                             }
                                         }
                                         /** cannot move through walls */
-                                        if( $playereasttype == 'wall' ){
+                                        if( $playernorthtype == 'wall' ){
                                             $move = false;
                                         }
                                     }
@@ -4177,7 +4187,7 @@
                                             }
                                         }
                                         /** cannot move through walls */
-                                        if( $playereasttype == 'wall' ){
+                                        if( $playersouthtype == 'wall' ){
                                             $move = false;
                                         }
                                     }
@@ -4278,6 +4288,18 @@
                                         }
                                     }
                                 }
+                            }
+                        }
+                        elseif( $k[0] == 'wall' ){
+                            if( isset( $k[1] ) AND isset( $k[2] ) ){
+                                if( isset( $_SESSION['coords']["{$k[1]}/{$k[2]}"] ) ){
+                                    $_SESSION['coords']["{$k[1]}/{$k[2]}"] = [
+                                        'disp'    => 'wall',
+                                        'born'    => time(),
+                                        'offdisp' => 'wall'
+                                    ];
+                                }
+                                header( 'Location:./?wall' );
                             }
                         }
                         elseif( $k[0] == 'jump' ){
@@ -5386,6 +5408,10 @@
                                             if( isset( $_GET['destroy'] ) ){
                                                 $classadditional .= ' destructable';
                                                 $url = "./?/destroy/{$k}";
+                                            }
+                                            if( isset( $_GET['wall'] ) ){
+                                                $classadditional .= ' wallable';
+                                                $url = "./?/wall/{$k}";
                                             }
                                             if( isset( $_GET['swap'] ) OR isset( $_SESSION['swap'] ) ){
                                                 $classadditional .= ' swappablea';
