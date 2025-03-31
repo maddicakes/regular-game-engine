@@ -1,5 +1,5 @@
 <?php    session_start(); /** regular game engine ~~~~~~~~~~~~~ :: https://github.com/maddicakes                   */
-      $version = 'va2.6'; /*  created/maintained by madelynne   :: https://bsky.app/profile/maddicakes.bsky.social */
+      $version = 'va2.61';/*  created/maintained by madelynne   :: https://bsky.app/profile/maddicakes.bsky.social */
                           /*  ~~~~~~~~~~~~~                                                                        */
                           /*  This is free and unencumbered software released into the public domain.              */
                           /*                                                                                       */
@@ -2746,8 +2746,8 @@
              *  @since va2
              */
             function _player( $opts = [] ){
-                $phealth = $_SESSION['health'];
-                $paction = $_SESSION['action'];
+                $phealth = isset( $_SESSION['health'] ) ? $_SESSION['health'] : 1;
+                $paction = isset( $_SESSION['action'] ) ? $_SESSION['action'] : 1;
                 $pcon    = $_SESSION['attributes'][1];
                 $pstam   = $_SESSION['attributes'][4];
                 $pstr    = $_SESSION['attributes'][5];
@@ -4019,7 +4019,6 @@
                          *  @since version alpha
                          */
                         elseif( $k[0] == 'playerright' ){
-                            if( $ppx == $xmax ){ $_SESSION['playerposition'] = "1/{$player['y']}"; }
                             if( $ppx < $xmax ){
                                 $right = $player['east'];
                                 if( isset( $_SESSION['coords']["{$right}"]["{$disp}"] ) ){
@@ -4155,57 +4154,43 @@
                             header( 'Location: ./' );
                         }
                         elseif( $k[0] == 'playerdown' ){
-                            if( $ppy == $ymax ){
-                                unset( $_SESSION['start'] );
-                                unset( $_SESSION['coords'] );
-                                $_SESSION['playerposition'] = "{$player['x']}/4";
-                                $areascore = $_SESSION['score'][0] > 0 ? $_SESSION['score'][0] : 0;
-                                $availscore = $_SESSION['score'][1] > 0 ? $_SESSION['score'][1] : 0;
-                                $_SESSION['score'][2] = $areascore + $availscore;
-                                $_SESSION['score'][0]  = 0;
-                                $_SESSION['area'] = $_SESSION['area'] + 1;
-                                $_SESSION['timer'][5] = time();
-                                header( 'Location: ./' );
-                            }
-                            else{
-                                $down = $ppx.'/'.$ppy+1;
-                                if( isset( $_SESSION['coords']["{$down}"]["{$disp}"] ) ){
-                                    $move = true;
-                                    if( $_SESSION['lvl'][3] >= 5 ){
-                                        if( isset( $_SESSION['coords']["{$down}"]['mob'] ) AND ! is_bool( $_SESSION['coords']["{$down}"]['mob'] ) ){ $move = false; }
-                                        else { $move = true; }
-                                    }
-                                    if( $move !== false ){
-                                        /** swim skill equates to water traversal
-                                         *  @since va2:
-                                         */                             
-                                        if( $playersouthtype == 'water' ){
-                                            if( isset( $resourcetable["{$playersouth}"]['swim'] ) ){
-                                                if( $resourcetable["{$playersouth}"]['swim'] > $_SESSION['skills'][3] ){
-                                                    $move = false;
-                                                }
+                            $down = $ppx.'/'.$ppy+1;
+                            if( isset( $_SESSION['coords']["{$down}"]["{$disp}"] ) ){
+                                $move = true;
+                                if( $_SESSION['lvl'][3] >= 5 ){
+                                    if( isset( $_SESSION['coords']["{$down}"]['mob'] ) AND ! is_bool( $_SESSION['coords']["{$down}"]['mob'] ) ){ $move = false; }
+                                    else { $move = true; }
+                                }
+                                if( $move !== false ){
+                                    /** swim skill equates to water traversal
+                                     *  @since va2:
+                                     */                             
+                                    if( $playersouthtype == 'water' ){
+                                        if( isset( $resourcetable["{$playersouth}"]['swim'] ) ){
+                                            if( $resourcetable["{$playersouth}"]['swim'] > $_SESSION['skills'][3] ){
+                                                $move = false;
                                             }
                                         }
-                                        /** cannot move through walls */
-                                        if( $playersouthtype == 'wall' ){
-                                            $move = false;
-                                        }
                                     }
-                                    if( $since_last_move < $seconds_to_next_move ){
+                                    /** cannot move through walls */
+                                    if( $playersouthtype == 'wall' ){
                                         $move = false;
                                     }
-                                    if( $move !== false ){
-                                        _attrup( [ 'attr' => 'stamina' ] );
-                                        $_SESSION['lvl'][4] = $_SESSION['lvl'][4] + 1;
-                                        if( $_SESSION['combat'][0] == 1 ){
-                                            $_SESSION['combat'][2] = 0;
-                                        }
-                                        else{
-                                            $_SESSION['combat'][2] = $_SESSION['combat'][2] + 1;
-                                        }
-                                        $_SESSION['playerposition'] = $down;
-                                        $_SESSION['timer'][2] = time();
+                                }
+                                if( $since_last_move < $seconds_to_next_move ){
+                                    $move = false;
+                                }
+                                if( $move !== false ){
+                                    _attrup( [ 'attr' => 'stamina' ] );
+                                    $_SESSION['lvl'][4] = $_SESSION['lvl'][4] + 1;
+                                    if( $_SESSION['combat'][0] == 1 ){
+                                        $_SESSION['combat'][2] = 0;
                                     }
+                                    else{
+                                        $_SESSION['combat'][2] = $_SESSION['combat'][2] + 1;
+                                    }
+                                    $_SESSION['playerposition'] = $down;
+                                    $_SESSION['timer'][2] = time();
                                 }
                             }
                             header( 'Location: ./' );
