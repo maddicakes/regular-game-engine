@@ -151,6 +151,7 @@
                 $disp = $_SESSION['worldpower'] !== false ? 'disp' : 'offdisp';
             }
             $tilemap = NULL;
+            $title   = '--';
             /** an array of keys that we expect to be used (@since va2.1) ~~~~~~~~~~~~~ */
             $trusted = [
                 'coord',
