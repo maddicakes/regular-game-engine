@@ -28,6 +28,41 @@ a{
         padding:    20%;
         text-align: center;
     }
+    &.move{
+        background-color: #000;
+        border-radius:    6px;
+        box-shadow:       0 0 3px #000;
+        display:          block;
+        height:           20px;
+        padding:          2px;
+        position:         absolute;
+        width:            20px;
+        z-index:          9999999999999999;
+        &.view{
+            bottom:8px;
+            left:  18px;
+            width: 25px;
+        }
+        &.e{ left: 50px;  bottom:10px; width:25px;}
+        &.w{ left: -15px; bottom:10px; width:25px;}
+        &.n{ left: 20px;  bottom:40px;  }
+        &.s{ left: 20px;  bottom:-25px; }
+        & span{
+            display:    block;
+            font-size:  16px;
+            padding:    0;
+            text-align: center;
+        }
+    }
+}
+
+.movement{
+    position: absolute;
+    display: block;
+    left: 0;
+    top: 20px;
+    height:30px;
+    width:30px;
 }
 
 .examining p {
@@ -339,10 +374,9 @@ color:#f9ffc7;
             z-index:  10002;
             padding:  0;
             position: relative;
-            margin:   0 auto;
+            margin:   0 calc(50% - 200px) 45px;
             width:420px;
             height:420px;
-            overflow:hidden;
             & div.y{
                 margin:0 0 1px;
                 clear:   both;
@@ -354,8 +388,8 @@ color:#f9ffc7;
                     padding:         5px 5px 5px 10px;
                     font-size:       9px;
                     line-height:     9px;
-                    left:            -5px;
-                    top:             10px;
+                    left:            -25px;
+                    top:             20px;
                     position:        absolute;
                     display:         block;
                     z-index:         902109210;
@@ -378,7 +412,7 @@ color:#f9ffc7;
             left:     10px;
             display:  block;
             padding:  5px;
-            background-color: #000;
+            background-color: #e4f2bf;
             display: block;
             content: '';
             width: 100px;
@@ -388,12 +422,13 @@ color:#f9ffc7;
             font-size:10px;
             line-height:10px;
             &.combat1{
-                bottom: 25px;
+                
                 left: calc(50% - 55px);
                 & span{ bottom: 0; }
             }
-            &.combat{
-                top: 25px;
+            &.combat0{
+                bottom: -37px;
+                left:112px;
                 & span{ top: 0; }
             }
             & strong{
@@ -401,7 +436,10 @@ color:#f9ffc7;
                 right:2px;
                 top:2px;
                 z-index:2;
-                text-shadow:0 0 2px #000;
+                text-shadow:
+                    0 1px 4px #000,
+                    0 1px 2px #000,
+                    0 0px 1px #000;
             }
             & span{
                 background-color: #20d477;
@@ -423,8 +461,9 @@ color:#f9ffc7;
             &.tef{
                 animation: tef 3s linear infinite;
             }
-            &.combat{
-                top: 10px;
+            &.combat0{
+                left:0;
+                bottom: -37px;
             }
             &.combat1{
                 bottom: 40px;
@@ -436,7 +475,7 @@ color:#f9ffc7;
         & .actions{
             height:auto;
             width:auto;
-            &.combat{
+            &.combat0{
                 top: 8px;
                 left: 125px;
             }
@@ -491,16 +530,18 @@ color:#f9ffc7;
         box-shadow: 
             inset 0 0    30px #000,
             inset 0 10px 20px #6426ab;
-        
         & .tile_face_out{
             color:    #cfc480;
-            font-size:13px;
-            line-height:12px;
+            font-size:12px;
+            line-height:6px;
+            letter-spacing:1px;
             position: absolute;
-            top:      -5px;
-            left:     5px;
+            bottom:   30px;
+            left:     7px;
             display:  block;
             z-index:9;
+            text-shadow:0 0 5px #000;
+            width:60px;
             & span.clear{
                 display:  block;
                 position: relative;
@@ -520,26 +561,7 @@ color:#f9ffc7;
             width:           100%;
         }
         & a{
-            z-index:2;
-            &.move{
-                height:   40%;
-                position: absolute;
-                width:    100%;
-                background-color:#000;
-                display:block;
-                z-index:100;
-                &.e{right:0; bottom:35%;width:50%;z-index:101;}
-                &.w{left:0; bottom:35%;width:50%;z-index:101;}
-                &.n{top:0;left:0;}
-                &.s{bottom:0;left:0;}
-                & span{
-                    background-color:rgba(43 51 44/.8);
-                    display:    block;
-                    font-size:  16px;
-                    padding:    0;
-                    text-align: center;
-                }
-            }
+            z-index: 2;
         }        
         & sub,
         & sup{
@@ -560,6 +582,9 @@ color:#f9ffc7;
             top: calc(100% - 18px);
             z-index:1;
             padding:1px;
+        }
+        &:has(>.movement){
+            z-index:70;
         }
         &:has(>.tree),
         &:has(>.treeb){
@@ -774,11 +799,12 @@ color:#f9ffc7;
             & span u{
                 position: absolute;
                 display: block;
-                width: 90px;
+                width: 40px;
                 height:10px;
                 color: #fff;
                 font-size:9px;
                 z-index:9999999999;
+                text-align:center;
                 top: 0;
             }
             & .arms{
@@ -793,7 +819,7 @@ color:#f9ffc7;
                 width:            6px;
                 height:           20px;
                 & u { 
-                    right: -120px; 
+                    right: -60px; 
                     top:5px;
                 }
                 &:after{
@@ -893,7 +919,7 @@ color:#f9ffc7;
                 width:            25px;
                 height:           25px;
                 & u { 
-                    right: -61px; 
+                    right: -6px; 
                     top:   -15px;
                 }
             }
@@ -993,13 +1019,13 @@ color:#f9ffc7;
             color:           #fff;
             display:         block;
             padding:         0;
-            width:           calc(100% - 110px);
+            width:           calc(100% - 127px);
             overflow:        hidden;
             z-index:         1010666;
             position:        absolute;
-            top:             30px;
+            top:             35px;
             background-color:#000;
-            left:            0;
+            left:            3px;
             height:95px;
             & span{
                 display: block;
