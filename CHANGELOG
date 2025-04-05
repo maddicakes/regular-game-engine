@@ -3,6 +3,8 @@
     ~~~~~~~~~~~~~
     @since va2.6
 
+    va2.71
+        (FIX) Fall for break (so player lands where they should)
     va2.7
         (FIX) Fall loop bug (loop removed, falling recalculated)
         (FIX) VISUAL BUG _tilebreakstatus() was missing global $resourcetable
