@@ -3,17 +3,23 @@
     ~~~~~~~~~~~~~
     @since va2.6
 
+    va2.7
+        (FIX) Fall loop bug (loop removed, falling recalculated)
+        (FIX) VISUAL BUG _tilebreakstatus() was missing global $resourcetable
+        (FIX) VISUAL BUG number_format() for health/action display
+        (CHG) Move resources to top of list on equip; arranged historically (last use descending)
+
     va2.6.1
         (FIX) HOTFIXes   hanging unitialized $_SESSION variable(s)
         (CHG) Area progression removed (y/64->new area), reworking for va2.7
 
     va2.6
-        (FIX) VISUAL BUG (#va2600000mt) Remove traversable tile class when tile is harvestable
-        (FIX) VISUAL BUG (#va2600001mt) Combination class for selected resource ['case'] -> ['case']['combine']
-        (FIX) VISUAL BUG (#va2600002mt) x1-3/y1-3 cutting off last 3 visible rows (x/y)
-        (FIX) BUG        (#va2600003mt) under certain conditions, a loop crash would occur; unset currentcoord when we're done with it
-        (FIX) BUG        (#va2600004mt) action drain not occurring due to last_action not being properly set under specific conditions
-        (FIX) BUG        (#va2600005mt) under/on for air to fall removed/ check for above air to fall only
+        (FIX) VISUAL BUG Remove traversable tile class when tile is harvestable
+        (FIX) VISUAL BUG Combination class for selected resource ['case'] -> ['case']['combine']
+        (FIX) VISUAL BUG x1-3/y1-3 cutting off last 3 visible rows (x/y)
+        (FIX) BUG        under certain conditions, a loop crash would occur; unset currentcoord when we're done with it
+        (FIX) BUG        action drain not occurring due to last_action not being properly set under specific conditions
+        (FIX) BUG        under/on for air to fall removed/ check for above air to fall only
         (CHG) Fishstock  Tied to area (1) would only give (1) fish per stock (range is now 1 -> area + 5)
         (CHG) Fishstock  Tied to water tiles only (previously each tile received a fishstock)
         (CHG) CSS        Health/Action moved off-map
