@@ -1,5 +1,5 @@
 <?php    session_start(); /** regular game engine ~~~~~~~~~~~~~ :: https://github.com/maddicakes                   */
-      $version = 'va2.7';/*  created/maintained by madelynne   :: https://bsky.app/profile/maddicakes.bsky.social  */
+      $version = 'va2.71';/*  created/maintained by madelynne   :: https://bsky.app/profile/maddicakes.bsky.social  */
                           /*                                                                                       */
                           /*  This is free and unencumbered software released into the public domain.              */
                           /*                                                                                       */
@@ -3046,20 +3046,18 @@
                     $eqrelic_b     = $_SESSION['equipment'][11];
                     if( ! isset( $_SESSION['currentresource'] ) ){
                         $equipment    .= '<div class="equipment">';
-                        $equipment    .= "<span class='hand_left'><u>{$eqhand_left}</u></span>";
-                        $equipment    .= "<span class='hand_right'><u>{$eqhand_right}</u></span>";
-                        $equipment    .= "<span class='arms'><u>{$eqarms}</u></span>";
-                        $equipment    .= "<span class='chest'><u>{$eqchest}</u></span>";
-                        $equipment    .= "<span class='feet'><u>{$eqfeet}</u></span>";
-                        $equipment    .= "<span class='hands'><u>{$eqhands}</u></span>";
-                        $equipment    .= "<span class='head'><u>{$eqhead}</u></span>";
-                        $equipment    .= "<span class='legs'><u>{$eqlegs}</u></span>";
-                        $equipment    .= '<span class="trinkets">';
-                        $equipment    .= "<span class='acc_a'><u>{$eqaccessory_a}</u></span>";
-                        $equipment    .= "<span class='acc_b'><u>{$eqaccessory_b}</u></span>";
-                        $equipment    .= "<span class='rel_a'><u>{$eqrelic_a}</u></span>";
-                        $equipment    .= "<span class='rel_b'><u>{$eqrelic_b}</u></span>";
-                        $equipment    .= '</span>';
+                        $equipment    .= "<span><u>{$eqhand_left}</u></span>";
+                        $equipment    .= "<span><u>{$eqhand_right}</u></span>";
+                        $equipment    .= "<span><u>{$eqarms}</u></span>";
+                        $equipment    .= "<span><u>{$eqchest}</u></span>";
+                        $equipment    .= "<span><u>{$eqfeet}</u></span>";
+                        $equipment    .= "<span><u>{$eqhands}</u></span>";
+                        $equipment    .= "<span><u>{$eqhead}</u></span>";
+                        $equipment    .= "<span><u>{$eqlegs}</u></span>";
+                        $equipment    .= "<span><u>{$eqaccessory_a}</u></span>";
+                        $equipment    .= "<span><u>{$eqaccessory_b}</u></span>";
+                        $equipment    .= "<span><u>{$eqrelic_a}</u></span>";
+                        $equipment    .= "<span><u>{$eqrelic_b}</u></span>";
                         $equipment    .= '</div>';
                     }
                     if( isset( $_SESSION['currentresource'] ) ){
@@ -4171,6 +4169,7 @@
                                                     $fall++;
                                                     continue;
                                                 }
+                                                else{ break; }
                                             }
                                         }
                                     }
