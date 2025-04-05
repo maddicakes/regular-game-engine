@@ -1,6 +1,5 @@
 <?php    session_start(); /** regular game engine ~~~~~~~~~~~~~ :: https://github.com/maddicakes                   */
       $version = 'va2.7';/*  created/maintained by madelynne   :: https://bsky.app/profile/maddicakes.bsky.social  */
-      $version = 'va2.7';/*  created/maintained by madelynne   :: https://bsky.app/profile/maddicakes.bsky.social  */
                           /*                                                                                       */
                           /*  This is free and unencumbered software released into the public domain.              */
                           /*                                                                                       */
