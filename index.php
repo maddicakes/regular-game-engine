@@ -3073,12 +3073,7 @@
                     $toolbelt = NULL;
                     $tools = [
                         'destroy'   => 'destroy',
-                        'ladder'    => 'ladder',
-                        'jump'      => 'jump',
-                        'minicoord' => 'mine',
-                        'tunnel'    => 'reinforce',
-                        'swap'      => 'swap',
-                        'wall'      => 'wall'
+                        'swap'      => 'swap'
                     ];
                     $toolbelt .= '<div class="toolbelt">';
                     foreach( $tools as $k => $v ){
@@ -4178,9 +4173,8 @@
                             }
                             /** Use temporary_airborne to calculate fall damage */
                             if( $_SESSION['temporary_airborne'] > 0 ){
-                                $newy = $_SESSION['temporary_airborne'] + $player['y'];
+                                $newy = ( $_SESSION['temporary_airborne'] - 1 ) + $player['y'];
                                 $_SESSION['playerposition'] = "{$player['x']}/{$newy}";
-                                var_dump($_SESSION['temporary_airborne'] );
                                 /** Is fall damage enabled in options? */
                                 if( $_SESSION['acquire'][2] == 1 ){
                                     $_SESSION['health'] = 
@@ -5786,7 +5780,9 @@
                                             }
                                             if( isset( $resourcetable["{$tdisp}"]['type'] ) ){
                                                 if( $resourcetable["{$tdisp}"]['type'] == 'floor' ){
-                                                    $classadditional .= ' traversable';
+                                                    if( $tdisp != 'ladder' ){
+                                                        $classadditional .= ' traversable';
+                                                    }
                                                 }
                                                 if( $resourcetable["{$tdisp}"]['type'] == 'open' ){
                                                     $classadditional .= ' open';
@@ -6072,6 +6068,29 @@
                                 }
                                 $action_available = number_format( $action_available );
                                 $action_total     = number_format( $action_total );
+                                
+                                $ladder = '<a href="./?ladder" class="ladder"></a>';
+                                if( isset( $_GET['ladder'] ) ){
+                                    $ladder = '<a class="ladder del" href="./?x"></a>';
+                                }
+                                $jump   = '<a href="./?jump" class="reachable"></a>';
+                                if( isset( $_GET['jump'] ) ){
+                                    $jump = '<a class="reachable del" href="./?x"></a>';
+                                }
+                                $mine  = '<a href="./?minicoord" class="harvestable"></a>';
+                                if( isset( $_GET['minicoord'] ) ){
+                                    $mine = '<a href="./?x" class="harvestable del"></a>';
+                                }
+                                $reinforce = '<a href="./?tunnel" class="reinforceable"></a>';
+                                if( isset( $_GET['tunnel'] ) ){
+                                    $reinforce = '<a href="./?x" class="reinforceable del"></a>';
+                                }
+                                $wall = '<a href="./?wall" class="wall">w</a>';
+                                if( isset( $_GET['wall'] ) ){
+                                    $wall = '<a href="./?x" class="wall del">w</a>';
+                                }
+
+                                $mapoutput .= "<div class='actions'>{$ladder}{$jump}{$mine}{$reinforce}{$wall}</div>";
                                 $mapoutput .= "<div class='combat{$_SESSION['combat'][0]}{$tef} health_display'><span style='width:{$health_total}%;'></span>{$health_detriment}<strong>{$health} / {$health_available}</strong></div>";
                                 if( $_SESSION['acquire'][0] == 1 ){
                                     $mapoutput .= "<div class='combat{$_SESSION['combat'][0]} action_display'><span style='width:{$action_total}%;'></span><strong>{$_SESSION['action']} / {$action_available}</strong></div>";
@@ -6079,6 +6098,7 @@
                             }
                         }
                     }
+
                     $mobcount = isset( $_SESSION['coords']["{$k}"]['mob'] ) ? $mobcount + 1 : $mobcount;
                     $mapoutput .= '</div>';
                     /** Map scorekeeper */
